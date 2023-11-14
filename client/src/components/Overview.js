@@ -39,7 +39,7 @@ const Overview = () => {
   }, []);
 
   const fetchProfile = (chain) => {
-  fetch(`http://localhost:3001/api/wallet/profile?wallet=${globalDataCache.walletAddress}&chain=${chain}`)
+  fetch(`${process.env.REACT_APP_API_URL}/api/wallet/profile?wallet=${globalDataCache.walletAddress}&chain=${chain}`)
         .then((response) => {
           if (!response.ok) {
             throw new Error('Network response was not ok');
