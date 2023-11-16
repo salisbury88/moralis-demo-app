@@ -31,7 +31,7 @@ function TxChart({ chartArray }) {
                         type: 'linear',
                         grid: {
                             display: true,
-                            color: "#242737"
+                            color: "#0f2140"
                         },
                         ticks: {
                             precision: 0,

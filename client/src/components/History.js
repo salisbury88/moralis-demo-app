@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../DataContext';
 import Skeleton from './Skeleton';
 import ChainDropDown from './ChainDropDown';
+import DateDropDown from './DateDropDown';
 import HistoryItem from './HistoryItem';
 import HistoryIcon from './HistoryIcon';
 import moment from 'moment';
@@ -28,7 +29,7 @@ const History = () => {
       }
   };
 
-  const fetchHistory = (chain) => {
+  const fetchHistory = (chain, days) => {
     setLoading(true);
     setError(null);
     setGlobalDataCache(prevData => ({
@@ -36,7 +37,7 @@ const History = () => {
       history:null,
       historyLoaded:false
     }));
-    fetch(`/api/wallet/history?chain=${chain}&wallet=${globalDataCache.walletAddress}`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/wallet/history?chain=${chain}&wallet=${globalDataCache.walletAddress}&days=${days ? days : "30"}`)
       .then(response => {
         if (!response.ok) throw new Error('Failed to fetch data');
         return response.json();
@@ -66,6 +67,14 @@ const History = () => {
     }));
     fetchHistory(selectedValue);
   };
+
+  const handleDateChange = (days) => {
+    setGlobalDataCache(prevData => ({
+      ...prevData,
+      days:days
+    }));
+    fetchHistory(globalDataCache.selectedChain, days);
+  };
   
 
   useEffect(() => {
@@ -81,13 +90,17 @@ const History = () => {
 
   useEffect(() => {
     localStorage.setItem('selectedChain', globalDataCache.selectedChain);
-}, [globalDataCache.selectedChain]);
+}, [globalDataCache.selectedChain, globalDataCache.days]);
 
   
   return (
     <div id="history-page">
       <div className="page-header">
         <h2>History</h2>
+        <DateDropDown 
+          onChange={handleDateChange} 
+          days={globalDataCache.days}
+        />
         <ChainDropDown 
           onChange={handleDropdownChange} 
           chains={globalDataCache.chains}

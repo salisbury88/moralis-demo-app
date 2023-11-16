@@ -5,7 +5,7 @@ import ChainDropDown from './ChainDropDown';
 import TokenLogo from './TokenLogo';
 import TokenPriceChart from './TokenPriceChart';
 import ExternalLinkIcon from './ExternalLinkIcon';
-import { Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
+import { Modal, ModalHeader, ModalBody, ModalFooter, UncontrolledTooltip } from 'reactstrap';
 import * as utilities from '../utilities.js';
 import { Link } from 'react-router-dom';
 
@@ -28,7 +28,7 @@ const DeFiTokens = () => {
       defi: null,
       defiLoaded:false
     }));
-    fetch(`/api/wallet/defi?chain=${chain}&wallet=${globalDataCache.walletAddress}`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/wallet/defi?chain=${chain}&wallet=${globalDataCache.walletAddress}`)
       .then(response => {
         if (!response.ok) throw new Error('Failed to fetch data');
         return response.json();
@@ -63,6 +63,26 @@ const DeFiTokens = () => {
     fetchDeFi(selectedValue);
   };
 
+  const handleTokenClick = (position) => {
+    toggleModal();
+    setDeFiLoading(true)
+    fetch(`${process.env.REACT_APP_API_URL}/api/wallet/defi/${position.tokenAddress}?chain=${globalDataCache.selectedChain}&wallet=${globalDataCache.walletAddress}`)
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch data');
+        return response.json();
+      })
+      .then(fetchedData => {
+        // Update globalDataCache with fetchedData
+        setActiveDeFi(fetchedData);
+        setDeFiLoading(false);
+        
+      })
+      .catch(error => {
+        setError(error.message);
+        setLoading(false);
+      });
+  };
+
   const renderDeFiTokenList = (protocol) => (
     <ul className="defi-list">
         <li className="header-row">
@@ -71,6 +91,7 @@ const DeFiTokens = () => {
         <div>Balance</div>
         <div>Value</div>
         <div>24hr Change</div>
+        {protocol.protocolId === "lido" && <div></div>}
         </li>
 
         {protocol.positions.map(position => (
@@ -118,7 +139,10 @@ const DeFiTokens = () => {
                         {Number(position.tokenPriceChange).toFixed(2)}%
                       </div>
                       </div>
-                  </li>
+                      <div>
+                      <button className="btn btn-primary btn-sm" onClick={() => handleTokenClick(position)}>Rewards</button>
+                      </div>
+                    </li>
                : ''
 
             }
@@ -147,7 +171,7 @@ const renderNFTTokenList = (protocol) => (
             {protocol.protocolId === "aave-3" ? '' : ''}
 
             <li className="position" key={position.aTokenAddress}>
-                <TokenLogo tokenImage={position.normalized_metadata.image} tokenName={position.normalized_metadata.name}/>
+                <TokenLogo tokenImage={position.normalized_metadata.image} tokenName={position.name}/>
                 <div className="token-info">
                   <div className="defi-token">{position.normalized_metadata.name}</div>
                   <div className="deposited-token">Pool Address {position.positionDetails.poolAddress}</div>
@@ -278,7 +302,7 @@ const renderNFTTokenList = (protocol) => (
         )}
 
 
-      <Modal isOpen={modal} toggle={toggleModal} size="md" className="token-modal">
+      <Modal isOpen={modal} toggle={toggleModal} size="lg" className="token-modal rewards">
           <ModalBody>
           {defiLoading && <Skeleton />}
             {activeDeFi && !defiLoading && (
@@ -289,103 +313,47 @@ const renderNFTTokenList = (protocol) => (
                 </button>
                 
                 <div className="container">                   
-
-                      <div className="token-modal-content">
-
-                        <div className="token-top">
-                          <div className="image">
-                            <TokenLogo tokenImage={activeDeFi.token.logo} tokenName={activeDeFi.token.name}/>
-                          </div>
-                          <div className="meta">
-                            <div className="title">{activeDeFi.token.name}</div>
-                            <div className="symbol">{activeDeFi.token.symbol}</div>
-                          </div>
-                        </div>
-
-                        <h2>${activeDeFi.currentPrice} <span className={`percent-change ${activeDeFi.direction}`}>{activeDeFi.direction === "up" ? '+' : ''}{activeDeFi.percentageChange}%</span></h2>
-
-                        <TokenPriceChart chartArray={activeDeFi.price_data} direction={activeDeFi.direction}/>
-                        <ul className="table-list">
-                          <li>
-                            <div className="left">Exchange</div>
-                            <div className="right">{activeDeFi.exchange?.name}</div>
+                  <div className="rewards">
+                    <h2>Recent Lido Rewards</h2>
+                    {activeDeFi && activeDeFi.length > 0 && !defiLoading && activeDeFi.some(reward => reward.received > 0) && (
+                        <>
+                        <ul className="reward-list">
+                          <li className="header-row">
+                            <div>Date</div>
+                            <div>Token Price</div>
+                            <div>Received</div>
+                            <div>Value</div>
+                            <div>Balance</div>
                           </li>
-                          <li>
-                            <div className="left">Exchange Address</div>
-                            <div className="right">{utilities.shortAddress(activeDeFi.exchange?.address)}</div>
-                          </li>                        
+
+                      
+                          {activeDeFi.filter(r => r.received > 0).map((reward, index) => (
+                            <li>
+                              <div id={`block-${index}`}>{reward.timestampLabel}</div>
+                              <UncontrolledTooltip target={`block-${index}`} placement="top">
+                                <div>Block Number:{reward.block}</div>
+                                <div>Timestamp: {reward.timestamp}</div>
+                              </UncontrolledTooltip>
+                              <div>${reward.tokenPrice}</div>
+                              <div className="positive" id={`tool-tip-${index}`}>+{Number(reward.received).toFixed(8)}</div>
+                              <UncontrolledTooltip target={`tool-tip-${index}`} placement="top">{reward.received}</UncontrolledTooltip>
+                              <div>${reward.receivedUsd}</div>
+                              <div>{reward.new_balance_decimals}</div>
+                            </li>
+                          ))}
+
                         </ul>
-                      </div>
+                      </>
                       
 
-                      <div className="token-modal-content">
-                          <div className="subtitle">Wallet Holdings</div>
-                          <ul className="table-list">
-                          <li>
-                            <div className="left">Current Balance</div>
-                            <div className="right">1</div>
-                          </li>
-                          <li>
-                            <div className="left">Current Value (USD)</div>
-                            <div className="right">$1,000</div>
-                          </li>
-                          <li>
-                            <div className="left">24 Hour Change (%)</div>
-                            <div className="right">47%</div>
-                          </li>
-                          <li>
-                            <div className="left">24 Hour Change (USD)</div>
-                            <div className="right">$345</div>
-                          </li>   
-                          <li>
-                            <div className="left">7 Day Change (%)</div>
-                            <div className="right">{activeDeFi.percentageChange}%</div>
-                          </li>
-                          <li>
-                            <div className="left">7 Day Change (USD)</div>
-                            <div className="right">${activeDeFi.usdChange}</div>
-                          </li>                          
-                        </ul>
-                      </div>
+                    
 
-                  
+                  )}
 
-                      <div className="token-modal-content">
-                          <div className="subtitle">Token Details</div>
-                          <ul className="table-list">
-                          <li>
-                            <div className="left">Contract Address</div>
-                            <div className="right">{utilities.shortAddress(activeDeFi.token.address)}</div>
-                          </li>
-                          <li>
-                            <div className="left">Name</div>
-                            <div className="right">{activeDeFi.token.name}</div>
-                          </li>
-                          <li>
-                            <div className="left">Symbol</div>
-                            <div className="right">{activeDeFi.token.symbol}</div>
-                          </li>
-                          <li>
-                            <div className="left">Contract Type</div>
-                            <div className="right">ERC20</div>
-                          </li>
-                          <li>
-                            <div className="left">Decimals</div>
-                            <div className="right">{activeDeFi.token.decimals}</div>
-                          </li>
-                        </ul>
-                      </div>
-
-
-                      <div className="token-modal-content">
-                          <div className="subtitle">Token Provenance</div>
-                          <p>Minted at block {activeDeFi.token.block_number}.</p>
-                      </div>
-
-          
-
-       
-    
+                  {!defiLoading && !activeDeFi.some(reward => reward.received > 0) && (
+                    <h5>No rewards found in the last 7 days</h5>
+                  )}
+                  </div>
                 </div>
                 
                 

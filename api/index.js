@@ -87,14 +87,18 @@ router.post('/api/wallet', async function(req,res,next) {
       console.log('Action chains:')
       console.log(active_chains)
   
-      const get_balance = await fetch(`${baseURL}/${address}/balance?`,{
+      const get_balance = await fetch(`${baseURL}/${address}/balance?chain=${req.chain}`,{
         method: 'get',
         headers: {accept: 'application/json', 'X-API-Key': `${API_KEY}`}
       });
   
       const balance = await get_balance.json();
       console.log(balance)
-  
+
+      const nativePrice = await utilities.getNativePrice(req.chain);
+      const nativeValue = nativePrice.usdPrice * Number(ethers.formatEther(balance.balance));
+      const nativeToken = nativePrice.nativePrice.symbol;
+      console.log(`Native price ${nativePrice.usdPrice}, balance is ${Number(ethers.formatEther(balance.balance))}, value is ${nativeValue} ${nativeToken}`);
       //100 eth
       if(balance.balance > 100000000000000000000) isWhale = true;
   
@@ -253,6 +257,30 @@ router.post('/api/wallet', async function(req,res,next) {
     }
   });
   
+router.get('/api/wallet/networth', async function(req,res,next) {
+  try {
+    // const address = req.query.wallet;
+    // const chain = req.chain ? req.chain : 'eth';
 
+    // const fetch_networth = await fetch(`${baseURL}/wallets/${address}/net-worth?`+ new URLSearchParams({
+    //   chain:chain
+    // }),{
+    //   method: 'get',
+    //   headers: {accept: 'application/json', 'X-API-Key': `${API_KEY}`}
+    // });
+
+    // if (!fetch_networth.ok) {
+    //   throw new Error(`Error fetching net-worth: ${fetch_networth.statusText}`);
+    // }
+
+    // let networth = await fetch_networth.json();
+    // console.log(networth);
+    // networth.total_networth_usd = utilities.formatPrice(networth.total_networth_usd);
+    
+    return res.status(200).json(200);
+  } catch(e) {
+    next(e);
+  }
+});
 
 export default router;

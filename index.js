@@ -15,6 +15,7 @@ app.use(express.json());
 app.use(cors());
 
 app.use(express.static(path.resolve(__dirname, './client/build')));
+app.use(validateChain);
 
 app.use('/', apiIndex);
 app.use('/', tokenApi);
@@ -43,7 +44,7 @@ function validateChain(req, res, next) {
   next();
 }
 
-app.use(validateChain);
+
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

@@ -25,7 +25,7 @@ const HistoryItem = ({ transaction }) => {
         <div className="tx-summary tx-details">
             <div className="title">Transaction summary</div>
             <ul>
-                {renderSummaryItem('Transaction Hash', utilities.shortAddress(transaction?.hash))}
+                {renderSummaryItem('Transaction Hash', transaction?.hash)}
                 {renderSummaryItem('Block Number', transaction?.block_number)}
                 {renderSummaryItem('Timestamp', transaction?.block_timestamp)}
                 {renderSummaryItem('Gas Fee', transaction?.gas_fee)}
@@ -54,12 +54,10 @@ const HistoryItem = ({ transaction }) => {
         ));
     };
 
-    const renderInternalTxList = (action) => {
-        return transaction?.internal_transactions
-        ?.filter(item => item.action === action && item.value !== "0")
-        .map((item, index) => (
+    const renderNativeList = (action) => {
+        return transaction?.native_transfers?.filter(item => item.action === action).map((item, index) => (
             <li key={item.address ?? index}>
-            <div>{item.value_decimal} ETH (internal tx)</div>
+            <div>{item.value_decimal} ETH {item.internal_transaction && <span>(via internal tx)</span>}</div>
             </li>
         ));
     };
@@ -95,7 +93,7 @@ const HistoryItem = ({ transaction }) => {
                     <ul>
                         {renderNFTList("sent")}
                         {renderTokenList("sent")}
-                        {renderInternalTxList("sent")}
+                        {renderNativeList("sent")}
                     </ul>
                 </div>
                 <div className="received">
@@ -103,7 +101,7 @@ const HistoryItem = ({ transaction }) => {
                     <ul>
                         {renderNFTList("received")}
                         {renderTokenList("received")}
-                        {renderInternalTxList("received")}
+                        {renderNativeList("received")}
                     </ul>
                 </div>
             </div>

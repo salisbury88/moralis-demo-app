@@ -2,10 +2,16 @@ $theme-colors: (
   "primary": #0d6efd,
 );
 
+$bg-color:#000D26;
+$bg-card:#041938;
+$bg-card-lighter:#0f2140;
+$bg-input:#0f2140;
+$border-color:#061a40;
+
 @import "~bootstrap/scss/bootstrap";
 
 body {
-    background: #141620;
+    background: $bg-color;
     color: white;
     font-family: 'Golos Text';
     -webkit-font-smoothing: antialiased;
@@ -82,6 +88,22 @@ h1, h2 {
     }
 }
 
+.copy {
+    padding: 7px;
+    background: #2b3351;
+    border: 1px solid #363841;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left:6px;
+}
+
+.copy-container {
+    display: flex;
+    align-items: center;
+}
+
 .naked-link {
     text-align: center;
     a {
@@ -142,7 +164,7 @@ h1, h2 {
 }
 
 input[type="text"] {
-    background: #1B1F30;
+    background: $bg-input;
     border: none;
     padding: 10px 15px;
     border-radius: 10px;
@@ -153,7 +175,7 @@ input[type="text"] {
 
 select {
     max-width: 180px;
-    background-color: #1B1F30;
+    background-color: $bg-input;
     border: none;
     padding: 10px 15px;
     border-radius: 10px;
@@ -169,19 +191,26 @@ select {
     justify-content: normal;
 
     .badge-card {
-        background: #2c334e;
-        border: 1px solid #252737;
+        background: $bg-card-lighter;
         margin: 5px;
         text-align: center;
         width: 47%;
         padding: 20px 10px;
         border-radius: 8px;
         opacity: 0.2;
+        font-size: 0.9rem;
+        font-weight: 600;
     }
 
     .badge-card.active {
         opacity: 1;
     }
+}
+
+.etherscan {
+    background: white;
+    border-radius: 100px;
+    padding: 1px;
 }
 
 .overview {
@@ -209,7 +238,7 @@ select {
     }
 
     .domains > div {
-        background: #1b1f30;
+        background: $bg-card;
         margin: 10px 0px 10px 10px;
         padding: 10px;
         border-radius: 100px;
@@ -222,7 +251,7 @@ select {
     justify-content: center;
     align-items: center;
     margin: 0 0 60px;
-    background: #181b29;
+    background: $bg-card;
     padding: 20px 0;
     border-bottom: 1px solid #242737;
 
@@ -242,9 +271,8 @@ select {
 
         a:hover, a.active {
             color: white;
-            background: #141620;
-            border-color: #6B6B6B;
-            border: 1px solid #222638;
+            background: $bg-color;
+            border: 1px solid $border-color;
             border-radius: 50px;
             font-weight: 600;
             padding: 8px 20px;
@@ -282,7 +310,7 @@ ul {
         display: none;
     }
     .modal-content {
-        background: #131a28;
+        background: $bg-color;
         color: white;
         min-height:100vh;
     }
@@ -296,7 +324,7 @@ ul {
         border-radius:10px;
     }
     .nft-modal-content, .token-modal-content {
-        background: #122037;
+        background: $bg-card;
         padding: 20px;
         border-radius: 10px;
         margin:20px 0;
@@ -345,9 +373,10 @@ ul.table-list li {
         border:none;
     }
 }
+
 .wallet-card {
     width: 100%;
-    background: #1B1F30;
+    background: $bg-card;
     border-radius: 15px;
     padding: 30px;
     margin: 30px 0;
@@ -390,6 +419,10 @@ ul.table-list li {
 		}
 	}
 }
+
+.wallet-card.light {
+    background:$bg-card-lighter;
+}
 .wallet-card.top {
     margin: 10px 0 0;
 }
@@ -424,13 +457,16 @@ ul.table-list li {
             color: #8e93aa;
             transition: all 0.2s;
             cursor:pointer;
+
+            &:hover {
+                color: white;
+                background: $bg-card-lighter;
+            }
         }
 
         a.nav-link.active {
             color: white;
-            background: #1c1e27;
-            border-color: #6B6B6B;
-            border: 1px solid #222638;
+            background: $bg-card-lighter;
             border-radius: 5px;
             font-weight: 600;
             padding: 8px 20px;
@@ -487,7 +523,7 @@ ul.table-list li {
     
     .nft {
         width:100%;
-        background:#131a28;
+        background:$bg-card;
         border-radius:10px;
         margin:20px 0;
         position: relative;
@@ -578,6 +614,16 @@ ul.table-list li {
     max-width: 1000px;
     margin: 0 auto;
 
+    .page-header {
+        h2 {
+            flex-grow:1;
+        }
+
+        div {
+            margin-left:10px;
+        }
+    }
+
     .history-item {
         width: 100%;
         display: flex;
@@ -640,7 +686,7 @@ ul.table-list li {
     }
 
     .accordion-button {
-        background: #141620;
+        background: $bg-color;
         color: white;
 
         &:after {
@@ -653,11 +699,11 @@ ul.table-list li {
     }
 
     .accordion-flush .accordion-item {
-        border-bottom: 1px solid #1f1f1f;
+        border-bottom: 1px solid $border-color;
     }
 
     .accordion-flush .accordion-collapse {
-        background: #131a28;
+        background:$bg-card;
         color:white;
     }
 
@@ -693,7 +739,7 @@ ul.table-list li {
     }
 
     .tx-summary {
-        background: #122037;
+        background: $bg-card-lighter;
         border-radius: 15px;
         padding: 20px 30px;
         margin: 20px 0;
@@ -772,11 +818,14 @@ ul.table-list li {
 
 li.header-row {
     font-size: 0.9rem;
-    font-weight: 600;
     cursor:default !important;
 
     &:hover {
         background:none !important;
+    }
+
+    div {
+        font-weight: 600 !important;
     }
 }
 
@@ -785,7 +834,7 @@ li.header-row {
     li {
         display: flex;
         align-items: center;
-        border-bottom: 1px solid #1f1f1f;
+        border-bottom: 1px solid $border-color;
         padding: 15px 0;
         transition: all 0.2s;
 
@@ -801,6 +850,7 @@ li.header-row {
 
         > div:not(:nth-child(1)) {
             flex: 1;
+            font-weight:500;
         }
 
         img {
@@ -818,26 +868,29 @@ li.header-row {
             font-size: 0.9rem;
         }
 
-        .negative {
-            color: #ff5c5c;
-        }
-
-        .positive {
-            color:#4fbf67;
-        }
-    }
-
-    .default-logo {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 20px;
-        border-radius: 50%;
     }
 }
 
+
+
+.default-logo {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    border-radius: 50%;
+}
+
+
+.negative {
+    color: #ff5c5c;
+}
+
+.positive {
+    color:#4fbf67;
+}
 .defi-list.nft-list {
     li {
         > div:nth-child(2) {
@@ -847,11 +900,45 @@ li.header-row {
     }
 }
 
+.rewards {
+    padding:30px;
+
+    .modal-content {
+        min-height:unset;
+    }
+}
+
+.reward-list {
+    li {
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid $border-color;
+        padding: 15px 0;
+        transition: all 0.2s;
+    }
+
+    li > div {
+        flex: 1;
+        max-width: 20%;
+        font-size: 0.9rem;
+    }
+
+    li > div:nth-child(4) {
+        max-width: 100px;
+    }
+
+    li {
+        .positive {
+            color:#4fbf67;
+        }
+    }
+}
+
 .token-list {
     li {
         cursor:pointer;
         &:hover {
-            background:#131a28;
+            background:$bg-card;
             transition: all 0.2s;
         }
     }
@@ -874,7 +961,7 @@ li.header-row {
     
     height: 100%;
     width: 100%;
-    background: linear-gradient(66deg, #1b1f30 0%, #141620 50%, #1b1f30 100%);
+    background: linear-gradient(66deg, $bg-card 0%, $bg-color 50%, $bg-card 100%);
     background-size: 400% 400%;
     animation: pulse 1.2s ease-in-out infinite;
     @keyframes pulse {

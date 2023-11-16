@@ -11,6 +11,7 @@ import moment from 'moment';
 import { UncontrolledTooltip } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import * as utilities from '../utilities.js';
+import CopyToClipboard from './CopyToClipboard';
 
 const Overview = () => {
   const { globalDataCache, setGlobalDataCache } = useData();
@@ -29,12 +30,14 @@ const Overview = () => {
       selectedChain:selectedValue
     }));
     fetchProfile(selectedValue);
+    fetchNetworth()
   };
 
   useEffect(() => {
     if (globalDataCache.walletAddress && !globalDataCache.stats) {
       setLoading(true)
       fetchProfile();
+      fetchNetworth()
     }
   }, []);
 
@@ -67,10 +70,31 @@ const Overview = () => {
         });
   }
 
+  const fetchNetworth = () => {
+    fetch(`${process.env.REACT_APP_API_URL}/api/wallet/networth?wallet=${globalDataCache.walletAddress}`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then((data) => {
+            setGlobalDataCache(prevData => ({
+              ...prevData,
+              networth: data
+            }));
+          })
+          .catch((error) => {
+            setError(error);
+          });
+  }
+
   useEffect(() => {
     console.log("Context value changed:", globalDataCache);
   }, [globalDataCache]);
-
+  useEffect(() => {
+    localStorage.setItem('selectedChain', globalDataCache.selectedChain);
+}, [globalDataCache.selectedChain]);
   return (
     <div>
       <div className="container overview">
@@ -80,19 +104,21 @@ const Overview = () => {
           <div className="domains">
             <div>
                 <Link to={`https://etherscan.io/address/${globalDataCache.walletAddress}`} target="_blank">
-                  <img src="/images/etherscan.svg" alt="etherscan" />{utilities.shortAddress(globalDataCache.walletAddress)} <ExternalLinkIcon width={16}/>
+                  <img className="etherscan" src="/images/etherscan.svg" alt="etherscan" />{utilities.shortAddress(globalDataCache.walletAddress)} <ExternalLinkIcon width={16}/>
                 </Link>
             </div>
-            <div>
+            <div id="ens-domain">
               {globalDataCache.profile.ens && (
                 <>
+                  <UncontrolledTooltip target={`ens-domain`} placement="top">ENS Domain</UncontrolledTooltip>
                   <img src="/images/ens-logo.avif" alt="ens" />{globalDataCache.profile.ens}
                 </>
               )}
             </div>
-            <div>
+            <div id="ud-domain">
             {globalDataCache.profile.unstoppable && (
                 <>
+                  <UncontrolledTooltip target={`ud-domain`} placement="top">Unstoppable Domain</UncontrolledTooltip>
                   <img src="/images/ud-logo.svg" alt="unstoppable" />{globalDataCache.profile.unstoppable}
                 </>
               )}
@@ -123,16 +149,27 @@ const Overview = () => {
 
                   <div>
                     <div className="heading">Address</div>
-                    <div className="big-value networth">
-                      {utilities.shortAddress(globalDataCache.walletAddress)}
+                    <div className="big-value networth copy-container">
+                      {utilities.shortAddress(globalDataCache.walletAddress)} 
+                      <CopyToClipboard valueToCopy={globalDataCache.walletAddress}>
+                        <button></button>
+                      </CopyToClipboard>
                     </div>
                   </div>
               </div>
             </div>
             
-            <div className="col">
+            <div className="col networth">
 							<div className="heading">Net-worth</div>
-							<div className="big-value">$2,421.42</div>
+							<div className="big-value">
+                {globalDataCache?.networth?.total_networth_usd && `$${globalDataCache?.networth?.total_networth_usd}`}
+                {!globalDataCache.networth && (
+                  <div className="lines">
+                    <div className="line pulse"></div>
+                </div>
+                )}
+                
+              </div>
 						</div>
 
             <div className="col">
@@ -275,42 +312,42 @@ const Overview = () => {
                   <div className="title">Badges</div>
 
                   <div class="badges">
-                
-                    <div className={globalDataCache.profile.isWhale ? `badge-card active` : `badge-card`}>
-                      <div class="icon">🐳</div>
-                      <div class="text">Whale</div>
-                    </div>
-
-                  
-                    <div className={globalDataCache.profile.earlyAdopter ? `badge-card active` : `badge-card`}>
+                    <UncontrolledTooltip target={`badge-whale`} placement="top">Holds more than 100 ETH</UncontrolledTooltip>
+                      <div id="badge-whale" className={globalDataCache.profile.isWhale ? `badge-card active` : `badge-card`}>
+                        <div class="icon">🐳</div>
+                        <div class="text">Whale</div>
+                      </div>
+                    
+                      <UncontrolledTooltip target={`badge-early`} placement="top">Pre-2017 Wallet</UncontrolledTooltip>
+                    <div id="badge-early" className={globalDataCache.profile.earlyAdopter ? `badge-card active` : `badge-card`}>
                       <div class="icon">🚀</div>
                       <div class="text">Early Adopter</div>
                     </div>
                   
 
-                  
-                    <div className={globalDataCache.profile.multiChainer ? `badge-card active` : `badge-card`}>
+                    <UncontrolledTooltip target={`badge-chains`} placement="top">Active on multiple chains</UncontrolledTooltip>
+                    <div id="badge-chains" className={globalDataCache.profile.multiChainer ? `badge-card active` : `badge-card`}>
                       <div class="icon">🔗</div>
                       <div class="text">Multi-Chainer</div>
                     </div>
                   
 
-                  
-                    <div className={globalDataCache.profile.speculator ? `badge-card active` : `badge-card`}>
+                    <UncontrolledTooltip target={`badge-tokens`} placement="top">Holds more than 20 tokens</UncontrolledTooltip>
+                    <div id="badge-tokens" className={globalDataCache.profile.speculator ? `badge-card active` : `badge-card`}>
                       <div class="icon">💰</div>
                       <div class="text">Token Speculator</div>
                     </div>
                   
 
-                
-                    <div className={globalDataCache.profile.collector ? `badge-card active` : `badge-card`}>
+                    <UncontrolledTooltip target={`badge-nfts`} placement="top">Holds more than 20 NFTs</UncontrolledTooltip>
+                    <div id="badge-nfts" className={globalDataCache.profile.collector ? `badge-card active` : `badge-card`}>
                       <div class="icon">🐧</div>
                       <div class="text">NFT Collector</div>
                     </div>
                 
 
-                
-                    <div class="badge-card">
+                    <UncontrolledTooltip target={`badge-age`} placement="top">Wallet Age</UncontrolledTooltip>
+                    <div id="badge-age" class="badge-card">
                       <div class="icon">🎂</div>
                       <div class="text">Club</div>
                     </div>

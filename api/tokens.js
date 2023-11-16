@@ -37,6 +37,7 @@ router.get('/api/wallet/tokens', async function(req,res,next) {
       const foundChain = utilities.chains.find(item => item.chain === chain);
       for(const token of data) {
         token.amount = ethers.formatUnits(token.balance, token.decimals);
+       
         if(!token.logo) {
             token.logo = `https://d23exngyjlavgo.cloudfront.net/${foundChain.id}_${token.token_address}`;
 
@@ -59,14 +60,19 @@ router.get('/api/wallet/tokens', async function(req,res,next) {
             verified_tokens[i].price = utilities.formatPrice(matchingPrice.usdPriceFormatted);
             verified_tokens[i].percentChange = matchingPrice["24hrPercentChange"];
             verified_tokens[i].value = parseFloat(verified_tokens[i].amount) * parseFloat(matchingPrice.usdPriceFormatted);
+            verified_tokens[i].value = utilities.formatPrice(verified_tokens[i].value);
             verified_tokens[i].valueChange = parseFloat(verified_tokens[i].value) * parseFloat(matchingPrice["24hrPercentChange"] / 100);
         }
     }
 
-    verified_tokens.sort((a, b) => b.value - a.value);
-
+    
+    verified_tokens = verified_tokens.sort(customSortDescending);
+    const verified_tokens_sorted = [
+        ...verified_tokens.filter(obj => obj.value !== undefined),
+        ...verified_tokens.filter(obj => obj.value === undefined)
+      ];
     return res.status(200).json({
-        verified_tokens,
+        verified_tokens:verified_tokens_sorted,
         spam_tokens
     });
 
@@ -74,7 +80,17 @@ router.get('/api/wallet/tokens', async function(req,res,next) {
       next(e);
     }
 });
-
+const customSortDescending = (a, b) => {
+    const numA = parseFloat((a.value || "0").replace(/,/g, ""));
+    const numB = parseFloat((b.value || "0").replace(/,/g, ""));
+  
+    // If 'value' is undefined in one of the objects, place it at the bottom
+    if (isNaN(numA) && isNaN(numB)) return 0; // No change in position
+    if (isNaN(numA)) return 1; // a is placed after b (bottom)
+    if (isNaN(numB)) return -1; // b is placed after a (bottom)
+  
+    return numB - numA; // Sort in descending order (highest to lowest)
+  };
 
 router.get('/api/wallet/tokens/:address', async function(req,res,next) {
     try {
@@ -105,9 +121,9 @@ router.get('/api/wallet/tokens/:address', async function(req,res,next) {
         }
     });
     
-    if (!response.ok) {
-      console.log(response.statusText)
-      const message = await response.json();
+    if (!get_block.ok) {
+      console.log(get_block.statusText)
+      const message = await get_block.json();
       throw new Error(message);
     }
 
@@ -127,7 +143,7 @@ router.get('/api/wallet/tokens/:address', async function(req,res,next) {
 
     for (let i = 1; i <= 6; i++) {
         
-        date.setDate(date.getDate() - i);
+        date.setDate(date.getDate() - 1);
         date.setHours(0, 0, 0, 0); // Reset time to midnight (00:00:00.000)
         const dateString = date.toISOString();
         const get_specific_block = await fetch(`${baseURL}/dateToBlock?chain=${chain}&date=${dateString}`, {
@@ -207,7 +223,7 @@ router.get('/api/wallet/tokens/:address', async function(req,res,next) {
     console.log(`$ Change: ${usdChange}`)
 
 
-    console.log(`Direction: ${direction}`);
+    console.log(`Direction: ${direction}`); 
     console.log(`Price Change: ${percentageChange}%`);
 
     price_data.reverse();
@@ -218,11 +234,49 @@ router.get('/api/wallet/tokens/:address', async function(req,res,next) {
         token.logo = `https://d23exngyjlavgo.cloudfront.net/${foundChain.id}_${token.address}`;
     }
 
+    //Get block minted
+    const get_block_minted = await fetch(`${baseURL}/block/${token.block_number}?chain=${chain}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-API-Key': `${API_KEY}`
+        }
+    });
+    
+    if (!get_block_minted.ok) {
+      console.log(get_block_minted.statusText)
+      const message = await get_block_minted.json();
+      throw new Error(message);
+    }
 
-          // Fetch provenance
-      // Fetch total transfers
+    const block_minted = await get_block_minted.json();
+
+    let block_created = {
+        timestamp: block_minted.timestamp,
+        timestamp_label: moment(block_minted.timestamp).fromNow(),
+        block_number: block_minted.number
+    }
+
+    // Get recent transfers
+    const get_token_transfers = await fetch(`${baseURL}/erc20/${token.address}/transfers?chain=${chain}&limit=10`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-API-Key': `${API_KEY}`
+        }
+    });
+    
+    if (!get_token_transfers.ok) {
+      console.log(get_token_transfers.statusText)
+      const message = await get_token_transfers.json();
+      throw new Error(message);
+    }
+
+    let token_transfers = await get_token_transfers.json();
+    token_transfers = token_transfers.result;
+    
     return res.status(200).json({
-        token, price_data, direction, exchange, currentPrice:utilities.formatPrice(currentPrice), percentageChange, usdChange,
+        token, block_minted:block_created, price_data, token_transfers, direction, exchange, currentPrice:utilities.formatPrice(currentPrice), percentageChange, usdChange,
     });
 
     } catch(e) {
@@ -387,5 +441,136 @@ router.get('/api/wallet/defi', async function(req,res,next) {
     }
 });
 
+
+router.get('/api/wallet/defi/:address', async function(req,res,next) {
+    try {
+        const address = req.query.wallet;
+        if(!address) throw new Error("Please provide a wallet address.");
+
+        const chain = req.query.chain ? req.query.chain : 'eth';
+        const tokenAddress = req.params.address;
+
+
+        const get_block = await fetch(`${baseURL}/dateToBlock?chain=${chain}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-API-Key': `${API_KEY}`
+            }
+        });
+
+        let block = await get_block.json();
+
+        let token_balances = [{
+            token_address:tokenAddress,
+            to_block:block.block
+        }];
+
+
+        const date = new Date(new Date().getTime() - 60000);
+        let date_blocks = [{
+            block:block.block,
+            date: date.toISOString()
+        }];
+
+        for (let i = 1; i <= 10; i++) {
+            
+            date.setDate(date.getDate() - 1);
+            date.setHours(13, 0, 0, 0); // Reset time to midnight (00:00:00.000)
+            const dateString = date.toISOString();
+            let get_specific_block = await fetch(`${baseURL}/dateToBlock?chain=${chain}&date=${dateString}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-API-Key': `${API_KEY}`
+                }
+            });
+
+            let specific_block = await get_specific_block.json();
+            token_balances.push({
+                token_address:tokenAddress,
+                exchange: "uniswapv2",
+                to_block:specific_block.block
+            });
+
+            date_blocks.push({
+                block: specific_block.block,
+                date: dateString
+            });
+
+        }
+        token_balances.reverse();
+
+        const prices = await utilities.fetchHistoricalPrices(token_balances, chain);
+
+        let balances = [];
+
+        // Assuming token_balances is an array containing token balances over time
+        for (let i = 0; i < token_balances.length; i++) {
+            let currentBalance = await fetchBalance(token_balances[i],address,chain,tokenAddress); // Fetch current balance
+            
+            let received = 0;
+            // if (i === token_balances.length - 1) {
+            //     received = 'Initial Balance';
+            // } else {
+            //     let previousBalance = i === 0 ? currentBalance : balances[i - 1].new_balance;
+            //     received = currentBalance - previousBalance;
+            // }
+
+            if(balances.length === 0) {
+                balances.push({
+                    new_balance: currentBalance,
+                    new_balance_decimals: ethers.formatUnits(currentBalance, 18),
+                    received: 0,
+                    block: token_balances[i].to_block,
+                    timestamp: date_blocks.find(item => String(item.block) === String(token_balances[i].to_block)).date,
+                    timestampLabel: moment(date_blocks.find(item => String(item.block) === String(token_balances[i].to_block)).date).format('Do MMM YYYY'),
+                    tokenPrice: prices.find(item => String(item.toBlock) === String(token_balances[i].to_block)).usdPrice,
+                    receivedUsd: 0
+                });
+            } else {
+                received = Number(ethers.formatEther(currentBalance)) - Number(balances[i-1].new_balance_decimals);
+                console.log('------')
+                console.log(Number(currentBalance))
+                console.log(Number(balances[i-1].new_balance_decimals))
+                console.log(`Received`)
+                console.log(received)
+                balances.push({
+                    new_balance: currentBalance,
+                    new_balance_decimals: ethers.formatUnits(currentBalance, 18),
+                    received: received,
+                    block: token_balances[i].to_block,
+                    timestamp: date_blocks.find(item => String(item.block) === String(token_balances[i].to_block)).date,
+                    timestampLabel: moment(date_blocks.find(item => String(item.block) === String(token_balances[i].to_block)).date).format('Do MMM YYYY'),
+                    tokenPrice: utilities.formatPrice(prices.find(item => String(item.toBlock) === String(token_balances[i].to_block)).usdPrice),
+                    receivedUsd: utilities.formatPrice(received * prices.find(item => String(item.toBlock) === String(token_balances[i].to_block)).usdPrice)
+                });
+            }
+
+            
+        }
+        balances.reverse();
+        console.log(balances);
+
+
+        return res.status(200).json(balances);
+    } catch(e) {
+        next(e);
+    }
+});
+
+
+async function fetchBalance(tokenBalance, address, chain, tokenAddress) {
+    let getBalances = await fetch(`${baseURL}/${address}/erc20?chain=${chain}&token_addresses=${tokenAddress}&to_block=${tokenBalance.to_block}`, {
+        method: 'get',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': `${API_KEY}`
+        }
+    });
+
+    let balanceData = await getBalances.json();
+    return balanceData[0].balance;
+}
 
 export default router;

@@ -3,6 +3,7 @@ import { useData } from '../DataContext';
 import Skeleton from './Skeleton';
 import ChainDropDown from './ChainDropDown';
 import NFT from './NFT';
+import CopyToClipboard from './CopyToClipboard';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
 import * as utilities from '../utilities.js';
 
@@ -20,7 +21,7 @@ const NFTs = () => {
   const handleNFTClick = (nft) => {
     toggleModal();
     setNFTLoading(true)
-    fetch(`/api/wallet/nfts/${nft.token_address}/${nft.token_id}?chain=${globalDataCache.selectedChain}`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/wallet/nfts/${nft.token_address}/${nft.token_id}?chain=${globalDataCache.selectedChain}`)
       .then(response => {
         if (!response.ok) throw new Error('Failed to fetch data');
         return response.json();
@@ -46,7 +47,7 @@ const NFTs = () => {
       nfts:null,
       nftsLoaded:false
     }));
-    fetch(`/api/wallet/nfts?chain=${chain}&wallet=${globalDataCache.walletAddress}`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/wallet/nfts?chain=${chain}&wallet=${globalDataCache.walletAddress}`)
       .then(response => {
         if (!response.ok) throw new Error('Failed to fetch data');
         return response.json();
@@ -132,8 +133,6 @@ const NFTs = () => {
 
          
                     <img className="nft-image" src={utilities.returnNFTImage(activeNFT,"high")} alt="nft detail" width="100%"/>
-          
-                   
 
                       <div className="nft-modal-content">
                         {activeNFT.verified_collection && (
@@ -150,7 +149,15 @@ const NFTs = () => {
                           </li>
                           <li>
                             <div className="left">Contract address</div>
-                            <div className="right">{utilities.shortAddress(activeNFT.token_address)}</div>
+                            <div className="right">
+                              <div className="copy-container">
+                              {utilities.shortAddress(activeNFT.token_address)}
+                                  <CopyToClipboard valueToCopy={activeNFT.token_address}>
+                                      <button></button>
+                                    </CopyToClipboard>
+                              </div>
+                              
+                              </div>
                           </li>
                           <li>
                             <div className="left">Token ID</div>
@@ -167,6 +174,18 @@ const NFTs = () => {
                           </p>
 
                           <ul className="table-list">
+                          <li>
+                              <div className="left">Transaction Hash</div>
+                              <div className="right">
+                                <div className="copy-container">
+                                {utilities.shortAddress(activeNFT.transfer_event.transaction_hash)}
+                                  <CopyToClipboard valueToCopy={activeNFT.transfer_event.transaction_hash}>
+                                      <button></button>
+                                    </CopyToClipboard>
+                                </div>
+                                
+                              </div>
+                            </li>
                             <li>
                               <div className="left">Transfer Type</div>
                               <div className="right"><span className="nft-type-label">{activeNFT.transfer_event.type}</span></div>
@@ -181,17 +200,22 @@ const NFTs = () => {
                               <div className="left">Block Number</div>
                               <div className="right">{activeNFT.transfer_event.block_number}</div>
                             </li>
-                            <li>
-                              <div className="left">Transaction Hash</div>
-                              <div className="right">{utilities.shortAddress(activeNFT.transfer_event.transaction_hash)}</div>
-                            </li>
+                            
                             <li>
                               <div className="left">Timestamp</div>
                               <div className="right">{activeNFT.transfer_event.block_timestamp}</div>
                             </li>
                             <li>
                               <div className="left">From Address</div>
-                              <div className="right">{utilities.shortAddress(activeNFT.transfer_event.from_address)}</div>
+                              <div className="right">
+                                
+                                <div className="copy-container">
+                                {utilities.shortAddress(activeNFT.transfer_event.from_address)}
+                                  <CopyToClipboard valueToCopy={activeNFT.transfer_event.from_address}>
+                                      <button></button>
+                                    </CopyToClipboard>
+                                </div>
+                              </div>
                             </li>
                             {activeNFT.transfer_event.operator && (
                               <li>

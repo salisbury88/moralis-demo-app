@@ -28,7 +28,7 @@ function App() {
   const handleWalletSubmit = async (address) => {
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/wallet`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/wallet?chain=${globalDataCache.selectedChain ? globalDataCache.selectedChain : 'eth'}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,7 +56,8 @@ function App() {
             isFresh: data.isFresh,
             ens: data.ens,
             unstoppable: data.unstoppable
-          }
+          },
+          days: "7"
         });
         
       } else {

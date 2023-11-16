@@ -213,7 +213,7 @@ export const fetchPricesForChunk = async (tokensChunk, chain) => {
     tokensChunk.forEach(function(item) {
       addresses.push({
         token_address: item.token_address,
-        exchange: chain === "eth" ? 'uniswapv2' : null
+        exchange: chain === "eth" ? 'uniswapv3' : null
       });
     });
 
@@ -238,6 +238,35 @@ export const fetchPricesForChunk = async (tokensChunk, chain) => {
 
       const pricesData = await response.json();
       return pricesData.filter(price => price !== null);
+
+  } catch (error) {
+      console.error("Error fetching token prices:", error);
+      return [];
+  }
+};
+
+export const fetchHistoricalPrices = async (array, chain) => {
+  try {
+
+      const response = await fetch(`${baseURL}/erc20/prices?include=percent_change&chain=${chain}`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-API-Key': `${API_KEY}`
+          },
+          body: JSON.stringify({
+            "tokens": array
+          })
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('Error response body:', errorBody);
+        throw new Error(`Error fetching prices: ${response.statusText}`);
+      }
+
+      const pricesData = await response.json();
+      return pricesData;
 
   } catch (error) {
       console.error("Error fetching token prices:", error);
@@ -307,10 +336,35 @@ const fetchHistoricalPrice = async (tokenAddress, blockNumber, chain) => {
   }
 };
 
+export async function getNativePrice(chain) {
+  const foundChain = networkData.find(item => item.id === chain);
+  
+  if (!foundChain) {
+    return 'Chain not found';
+  }
+
+  const tokenAddress = foundChain.wrappedTokenAddress;
+
+  try {
+    const response = await fetch(`${baseURL}/erc20/${tokenAddress}/price?chain=${chain}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': `${API_KEY}`
+      }
+    });
+
+    const data = await response.json();
+    return data; // Replace with the relevant price data returned by the API
+  } catch (error) {
+    return 'Error fetching data';
+  }
+}
+
 
 export const fetchSinglePrice = async (tokenAddress, chain) => {
   try {
-    const response = await fetch(`${baseURL}/erc20/${tokenAddress}/price?exchange=uniswapv2&chain=${chain}&include=percent_change`, {
+    const response = await fetch(`${baseURL}/erc20/${tokenAddress}/price?exchange=uniswapv3&chain=${chain}&include=percent_change`, {
       method: 'GET',
       headers: {
           'Content-Type': 'application/json',
@@ -395,20 +449,42 @@ export function formatPrice(price, precision = 2) {
   return roundedPrice.toLocaleString(undefined, { minimumFractionDigits: precision, maximumFractionDigits: precision });
 }
 
+export function formatNumber(numberOrString) {
+  let num = numberOrString;
+
+  // Convert to number if it's a string representation of a number
+  if (typeof numberOrString === 'string' && !isNaN(parseFloat(numberOrString))) {
+    num = parseFloat(numberOrString);
+  }
+
+  // Check if the input is a valid number
+  if (!isNaN(num)) {
+    // Check if the number is an integer or a decimal
+    if (Number.isInteger(num)) {
+      return num.toLocaleString(); // Format whole numbers using the user's locale
+    } else {
+      // For decimal numbers, format up to 3 decimal places
+      return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+    }
+  } else {
+    return 'Invalid input';
+  }
+}
+
 export function extractMetadataInfo(metadata) {
   // Extract feeTier using regular expression
-  const feeTierMatch = metadata.description.match(/Fee Tier: ([0-9.]+%)/);
+  const feeTierMatch = metadata?.description ? metadata.description.match(/Fee Tier: ([0-9.]+%)/) : "Unknown";
   const feeTier = feeTierMatch ? parseFloat(feeTierMatch[1]) : null;
 
   // Extract pairName using regular expression
-  const pairNameMatch = metadata.name.match(/Uniswap - ([0-9.]+%) - (.+?) -/);
+  const pairNameMatch = metadata?.name ? metadata.name.match(/Uniswap - ([0-9.]+%) - (.+?) -/) : "Unknown";
   const pairName = pairNameMatch ? pairNameMatch[2] : null;
 
   // Extract poolAddress, token symbols, and token addresses using regular expressions
-  const poolAddressMatch = metadata.description.match(/Pool Address: ([0-9a-fA-Fx]+)/);
+  const poolAddressMatch = metadata?.description ? metadata.description.match(/Pool Address: ([0-9a-fA-Fx]+)/) : "Unknown";
   const poolAddress = poolAddressMatch ? poolAddressMatch[1] : null;
 
-  const tokenAddressesMatch = metadata.description.match(/([a-zA-Z0-9]+) Address: ([0-9a-fA-Fx]+)/g);
+  const tokenAddressesMatch = metadata?.description ? metadata.description.match(/([a-zA-Z0-9]+) Address: ([0-9a-fA-Fx]+)/g) : "Unknown";
   const tokenInfo = [];
   if (tokenAddressesMatch) {
     for (const match of tokenAddressesMatch) {

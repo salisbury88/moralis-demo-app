@@ -58,19 +58,28 @@ router.get('/api/wallet/history', async function(req,res,next) {
         // console.log(wallet_chains)
 
         // Used to fetch the last 7 days
-        const one_week_ago = moment().subtract(14, 'days').format('YYYY-MM-DD');
+        const days = ["7","14","30","90"]
+        let day = req.query.days ? req.query.days : "14";
+        if (!days.includes(day)) {
+            day = "14"
+        }
+
+        const one_week_ago = moment().subtract(Number(day), 'days').format('YYYY-MM-DD');
 
         // Get decoded transactions for the wallet
         const history = await fetchDecodedTransactions(address, wallet_chains, one_week_ago);
         if(history) {
             for(let tx of history) {
                 tx.native_transfers = [];
+                tx.value_decimal = ethers.formatEther(tx.value);
+
                 if(tx.internal_transactions && tx.internal_transactions.length > 0) {
                     for(let internalTx of tx.internal_transactions) {
                         internalTx.value_decimal = ethers.formatUnits(internalTx.value);
-                        internalTx.action = internalTx.from.toLowerCase() === address.toLowerCase() ? "sent" : "received";
+                        internalTx.action = internalTx.from.toLowerCase() === address.toLowerCase() ? "sent" : internalTx.to.toLowerCase() === address.toLowerCase() ? "received" : "contract movement";
                         internalTx.type = "Internal Tx";
-                        if(internalTx.value !== "0") {
+                        
+                        if(internalTx.value !== "0" && internalTx.action === "sent" || internalTx.value !== "0" && internalTx.action === "received") {
                             internalTx.type = "Native Transfer";
                             tx.native_transfers.push({
                                 from_address: internalTx.from,
@@ -78,7 +87,7 @@ router.get('/api/wallet/history', async function(req,res,next) {
                                 to_address: internalTx.to,
                                 to_address_label: null,
                                 value: internalTx.value,
-                                value_decimal: internalTx.value_decimal,
+                                value_decimal: ethers.formatEther(internalTx.value),
                                 action: internalTx.action,
                                 internal_transaction:true
                             });
@@ -93,7 +102,7 @@ router.get('/api/wallet/history', async function(req,res,next) {
                         to_address: tx.to_address,
                         to_address_label: tx.to_address_label,
                         value: tx.value,
-                        value_decimal: tx.value_decimal,
+                        value_decimal: ethers.formatEther(tx.value),
                         action: tx.from_address.toLowerCase() === address.toLowerCase() ? "sent" : "received",
                         internal_transaction:false
                     })
@@ -291,7 +300,6 @@ const setTransactionCategory = (transaction, wallet_address) => {
 
     const nativeSent = native_transfers.some(transfer => transfer.action === "sent");
     const nativeReceived = native_transfers.some(transfer => transfer.action === "received");
-
     
     const erc20Sent = erc20_transfers.some(transfer => transfer.action === "sent");
     const erc20Received = erc20_transfers.some(transfer => transfer.action === "received");
@@ -361,7 +369,7 @@ const setTransactionCategory = (transaction, wallet_address) => {
 }
 
 const setTransactionLabel = (transaction, category) => {
-    const { erc20_transfers, nft_transfers, value, to_address, to_address_label, from_address, from_address_label } = transaction;
+    const { erc20_transfers, nft_transfers, native_transfers, value, to_address, to_address_label, from_address, from_address_label } = transaction;
 
     const getNativeTokenName = (chainName) => {
         switch (chainName) {
@@ -392,16 +400,34 @@ const setTransactionLabel = (transaction, category) => {
         case 'Send': {
             if (!erc20_transfers.length && !nft_transfers.length) {
                 const nativeTokenName = getNativeTokenName(transaction.chain);
-                return `Sent ${ethers.formatUnits(value, 18)} ${nativeTokenName} to ${getAddressOrLabel(to_address, to_address_label)}`;
+
+                const sentTransfers = native_transfers.filter(transfer => transfer.action === 'sent');
+                const sentCount = sentTransfers.length;
+                
+                if (sentCount === 1) {
+                    const transfer = sentTransfers[0];
+                    const to = getAddressOrLabel(transfer.to_address, transfer.to_address_label, to_address, to_address_label);
+                    return `Sent ${transfer.value_decimal} ${nativeTokenName} to ${to}`;
+                }
+                
+                return `Sent ${sentCount} ${nativeTokenName} transfer${sentCount > 1 ? 's' : ''}`;
             }
-            return `Sent`;
         }
         case 'Receive': {
             if (!erc20_transfers.length && !nft_transfers.length) {
                 const nativeTokenName = getNativeTokenName(transaction.chain);
-                return `Received ${ethers.formatUnits(value, 18)} ${nativeTokenName} from ${getAddressOrLabel(from_address, from_address_label)}`;
+
+                const receiveTransfers = native_transfers.filter(transfer => transfer.action === 'received');
+                const receiveCount = receiveTransfers.length;
+                
+                if (receiveCount === 1) {
+                    const transfer = receiveTransfers[0];
+                    const from = getAddressOrLabel(transfer.from_address, transfer.from_address_label, from_address, from_address_label);
+                    return `Received ${transfer.value_decimal} ${nativeTokenName} from ${from}`;
+                }
+                
+                return `Received ${receiveCount} ${nativeTokenName} transfer${receiveCount > 1 ? 's' : ''}`;
             }
-            return `Received`;
         }
         case 'Airdrop': {
             const receivedAirdrops = nft_transfers.filter(transfer => transfer.isAirdrop && transfer.action === 'received').length;
