@@ -54,8 +54,7 @@ app.use((err, req, res, next) => {
 if (process.env.NODE_ENV === 'production') {
   app.get('/*', async function(req,res,next) {
     try {
-      console.log('hellloooo!')
-      return res.sendFile(path.join(__dirname ,'./client/public/index.html'));
+      return res.redirect('/');
     } catch(e) {
       next(e);
     }
