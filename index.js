@@ -51,6 +51,12 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
+if (process.env.NODE_ENV === 'production') {
+  const publicPath = path.join(__dirname, './client/public');
+  app.use(express.static(publicPath));
+  app.use('*', express.static(publicPath));
+}
+
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
