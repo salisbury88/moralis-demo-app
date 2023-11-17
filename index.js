@@ -53,8 +53,7 @@ app.use((err, req, res, next) => {
 
 if (process.env.NODE_ENV === 'production') {
   const publicPath = path.join(__dirname, './client/public');
-  app.use(express.static(publicPath));
-  app.use('*', express.static(publicPath));
+  app.get("/*", (req, res) => { res.sendFile(path.join(__dirname ,'./public/index.html')); })
 }
 
 const PORT = process.env.PORT || 3001;
