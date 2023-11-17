@@ -52,8 +52,14 @@ app.use((err, req, res, next) => {
 });
 
 if (process.env.NODE_ENV === 'production') {
-  const publicPath = path.join(__dirname, './client/public');
-  app.get("/*", (req, res) => { res.sendFile(path.join(__dirname ,'./public/index.html')); })
+  app.get('/*', async function(req,res,next) {
+    try {
+      console.log('hellloooo!')
+      return res.sendFile(path.join(__dirname ,'./client/public/index.html'));
+    } catch(e) {
+      next(e);
+    }
+  });
 }
 
 const PORT = process.env.PORT || 3001;
