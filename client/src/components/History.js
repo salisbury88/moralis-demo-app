@@ -37,7 +37,7 @@ const History = () => {
       history:null,
       historyLoaded:false
     }));
-    fetch(`${process.env.REACT_APP_API_URL}/api/wallet/history?chain=${chain}&wallet=${globalDataCache.walletAddress}&days=${days ? days : "30"}`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/wallet/history?chain=${chain}&wallet=${globalDataCache.walletAddress}&days=${days ? days : "7"}`)
       .then(response => {
         if (!response.ok) throw new Error('Failed to fetch data');
         return response.json();
@@ -107,10 +107,14 @@ const History = () => {
           selectedChain={globalDataCache.selectedChain}
         />
       </div>
-
+      {!loading && !error && globalDataCache?.history && globalDataCache.history.length === 0 && (
+          <h5>No activity found for this period.</h5>
+        )}
       <div className="container">
         {loading && <Skeleton />}
         {error && <div className="text-red-500">{error}</div>} 
+
+        
 
         <Accordion flush open={open} toggle={toggle}>
           {globalDataCache.history && globalDataCache.history.map(item => (
@@ -151,6 +155,11 @@ const History = () => {
                     </div>
                     <div className="history-info">
                       <div className="label">{item.label}</div>
+                      {item.approvals && item.approvals.length > 0 && (
+                        <div className="secondary-line">
+                          Spender: {item.approvals[0].spender.address_label ? item.approvals[0].spender.address_label : item.approvals[0].spender.address}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

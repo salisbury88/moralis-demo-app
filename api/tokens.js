@@ -473,7 +473,7 @@ router.get('/api/wallet/defi/:address', async function(req,res,next) {
             date: date.toISOString()
         }];
 
-        for (let i = 1; i <= 10; i++) {
+        for (let i = 1; i <= 7; i++) {
             
             date.setDate(date.getDate() - 1);
             date.setHours(13, 0, 0, 0); // Reset time to midnight (00:00:00.000)

@@ -19,7 +19,7 @@ const Overview = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    setLoading(!globalDataCache);
+    // setLoading(!globalDataCache);
   }, [globalDataCache]);
 
   const handleDropdownChange = (selectedValue) => {
@@ -27,6 +27,7 @@ const Overview = () => {
       ...prevData,
       nftsLoaded:false,
       tokensLoaded:false,
+      defiLoaded:false,
       selectedChain:selectedValue
     }));
     fetchProfile(selectedValue);
@@ -42,6 +43,7 @@ const Overview = () => {
   }, []);
 
   const fetchProfile = (chain) => {
+    setLoading(true);
   fetch(`${process.env.REACT_APP_API_URL}/api/wallet/profile?wallet=${globalDataCache.walletAddress}&chain=${chain}`)
         .then((response) => {
           if (!response.ok) {
@@ -60,7 +62,8 @@ const Overview = () => {
             },
             interactions:data.addressOccurrences,
             tokenCount:data.tokens.length,
-            token_balances: data.tokens
+            token_balances: data.tokens,
+            nativeNetworth: data.nativeNetworth
           }));
           setLoading(false);
         })
@@ -71,22 +74,22 @@ const Overview = () => {
   }
 
   const fetchNetworth = () => {
-    fetch(`${process.env.REACT_APP_API_URL}/api/wallet/networth?wallet=${globalDataCache.walletAddress}`)
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
-            return response.json();
-          })
-          .then((data) => {
-            setGlobalDataCache(prevData => ({
-              ...prevData,
-              networth: data
-            }));
-          })
-          .catch((error) => {
-            setError(error);
-          });
+    // fetch(`${process.env.REACT_APP_API_URL}/api/wallet/networth?wallet=${globalDataCache.walletAddress}`)
+    //       .then((response) => {
+    //         if (!response.ok) {
+    //           throw new Error('Network response was not ok');
+    //         }
+    //         return response.json();
+    //       })
+    //       .then((data) => {
+    //         setGlobalDataCache(prevData => ({
+    //           ...prevData,
+    //           networth: data
+    //         }));
+    //       })
+    //       .catch((error) => {
+    //         setError(error);
+    //       });
   }
 
   useEffect(() => {
@@ -107,22 +110,22 @@ const Overview = () => {
                   <img className="etherscan" src="/images/etherscan.svg" alt="etherscan" />{utilities.shortAddress(globalDataCache.walletAddress)} <ExternalLinkIcon width={16}/>
                 </Link>
             </div>
-            <div id="ens-domain">
+            
               {globalDataCache.profile.ens && (
-                <>
+                <div id="ens-domain">
                   <UncontrolledTooltip target={`ens-domain`} placement="top">ENS Domain</UncontrolledTooltip>
                   <img src="/images/ens-logo.avif" alt="ens" />{globalDataCache.profile.ens}
-                </>
+                  </div>
               )}
-            </div>
-            <div id="ud-domain">
+            
+            
             {globalDataCache.profile.unstoppable && (
-                <>
+              <div id="ud-domain">
                   <UncontrolledTooltip target={`ud-domain`} placement="top">Unstoppable Domain</UncontrolledTooltip>
                   <img src="/images/ud-logo.svg" alt="unstoppable" />{globalDataCache.profile.unstoppable}
-                </>
+                </div>
               )}
-            </div>
+            
           </div>
 
         </h2>
@@ -160,10 +163,15 @@ const Overview = () => {
             </div>
             
             <div className="col networth">
-							<div className="heading">Net-worth</div>
+							<div className="heading">Native holdings</div>
 							<div className="big-value">
-                {globalDataCache?.networth?.total_networth_usd && `$${globalDataCache?.networth?.total_networth_usd}`}
-                {!globalDataCache.networth && (
+                {(globalDataCache?.nativeNetworth && !loading) && (
+                  <>
+                  ${globalDataCache.nativeNetworth.nativeValue}
+                  <span className="native-holdings">({globalDataCache.nativeNetworth.nativeBalance} {globalDataCache.nativeNetworth.nativeToken})</span>
+                  </>
+                )}
+                {(!globalDataCache.nativeNetworth || loading) && (
                   <div className="lines">
                     <div className="line pulse"></div>
                 </div>
@@ -242,28 +250,38 @@ const Overview = () => {
 
                 <div className="wallet-card">
                   <div className="title">Tokens ({globalDataCache?.token_balances.length})</div>
-                  <ul className="token-list">
+                  
 
-                  <li>
-                    <div className="heading">Token</div>
-                    <div></div>
-                    <div className="heading">Balance</div>
-                  </li>
-                  {globalDataCache.token_balances && globalDataCache.token_balances.filter(token => !token.possible_spam).slice(0,3).map(token => (
-                    <li key={token.token_address}>
-                      <TokenLogo tokenImage={token.logo} tokenName={token.name}/>
-                      <div>
-                        <div className="token-name">{token.symbol}</div>
-                      </div>
-                      <div className="token-balance">{Number(token.amount).toFixed(2)}</div>
+                  {(globalDataCache.token_balances && globalDataCache.token_balances.length > 0) && (
+                    <>
+                    <ul className="token-list">
 
-                      
-                    </li>
-                ))}
-                </ul>
-                <div className="naked-link">
-                  <Link to="/tokens">View all <ArrowIcon width={16} /></Link>
-                </div>
+                        <li>
+                          <div className="heading">Token</div>
+                          <div></div>
+                          <div className="heading">Balance</div>
+                        </li>
+                          {globalDataCache.token_balances && globalDataCache.token_balances.filter(token => !token.possible_spam).slice(0,3).map(token => (
+                            <li key={token.token_address}>
+                              <TokenLogo tokenImage={token.logo} tokenName={token.name}/>
+                              <div>
+                                <div className="token-name">{token.symbol}</div>
+                              </div>
+                              <div className="token-balance">{Number(token.amount).toFixed(2)}</div>
+
+                              
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="naked-link">
+                          <Link to="/tokens">View all <ArrowIcon width={16} /></Link>
+                        </div>
+                    </>
+                  )}
+                  
+                  {(!globalDataCache.token_balances || globalDataCache.token_balances.length === 0) && (
+                    <p>No tokens found on this chain.</p>
+                  )}
                 
                 </div>
 

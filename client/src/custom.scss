@@ -230,6 +230,11 @@ select {
         font-weight:500;
         display: flex;
         align-items: center;
+
+        a {
+            color:white;
+            text-decoration:none;
+        }
         
         img {
             width:20px;
@@ -390,6 +395,12 @@ ul.table-list li {
         margin-bottom: 15px;
     }
 
+    .native-holdings {
+        font-size:0.9rem;
+        font-weight: 500;
+        margin-left:5px;
+    }
+
     .title {
 	    font-size: 1.4rem;
 	    font-weight: 700;
@@ -425,6 +436,10 @@ ul.table-list li {
 }
 .wallet-card.top {
     margin: 10px 0 0;
+}
+
+.heading-group {
+    margin-bottom:10px;
 }
 
 .nft-summary {
@@ -648,6 +663,11 @@ ul.table-list li {
                 margin-left:5px;
             }
         }
+
+        .secondary-line {
+            font-size:0.8rem;
+            color: #5A5A5A;
+        }
     }
 
     .history-item > div:nth-child(1) {
@@ -707,6 +727,12 @@ ul.table-list li {
         color:white;
     }
 
+    .collapse.show {
+        .accordion-body {
+            background:$bg-card;
+        }
+    }
+
     .tx-detail {
         display: flex;
         justify-content: space-evenly;
@@ -720,6 +746,7 @@ ul.table-list li {
             li {
                 display: flex;
                 align-items: center;
+                justify-content: left;
 
                 .image {
                     width: 40px;
@@ -761,6 +788,12 @@ ul.table-list li {
                 border-bottom:none;
             }
         }
+    }
+}
+
+.internal-txs {
+    .heading-group {
+        width:30%;
     }
 }
 

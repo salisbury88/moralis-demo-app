@@ -98,6 +98,9 @@ router.post('/api/wallet', async function(req,res,next) {
       const nativePrice = await utilities.getNativePrice(req.chain);
       const nativeValue = nativePrice.usdPrice * Number(ethers.formatEther(balance.balance));
       const nativeToken = nativePrice.nativePrice.symbol;
+      const nativeNetworth = {
+        nativePrice, nativeValue:utilities.formatPrice(nativeValue), nativeToken, nativeBalance: utilities.formatNumber(ethers.formatEther(balance.balance))
+      }
       console.log(`Native price ${nativePrice.usdPrice}, balance is ${Number(ethers.formatEther(balance.balance))}, value is ${nativeValue} ${nativeToken}`);
       //100 eth
       if(balance.balance > 100000000000000000000) isWhale = true;
@@ -141,7 +144,7 @@ router.post('/api/wallet', async function(req,res,next) {
       if(wallet_chains.length > 1) multiChainer = true;
       
       console.log(`Time to return`)
-      return res.status(200).json({address,
+      return res.status(200).json({address,nativeNetworth,
         active_chains:wallet_chains, walletAge, firstSeenDate, lastSeenDate, ens,unstoppable,
         isWhale, earlyAdopter,multiChainer,speculator,balance:balance.balance, moment, isFresh
       });
@@ -223,7 +226,7 @@ router.post('/api/wallet', async function(req,res,next) {
 
         const addressOccurrences = utilities.findAddressOccurrences(all_txs,address);
 
-        const response = await fetch(`${baseURL}/${address}/erc20?${chain}`, {
+        const response = await fetch(`${baseURL}/${address}/erc20?chain=${chain}`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -250,7 +253,23 @@ router.post('/api/wallet', async function(req,res,next) {
           collector = true;
         }
 
-        return res.status(200).json({addressOccurrences,chartArray,stats,tokens,collector});
+
+        const get_balance = await fetch(`${baseURL}/${address}/balance?chain=${req.chain}`,{
+          method: 'get',
+          headers: {accept: 'application/json', 'X-API-Key': `${API_KEY}`}
+        });
+    
+        const balance = await get_balance.json();
+        console.log(balance)
+
+        const nativePrice = await utilities.getNativePrice(req.chain);
+        const nativeValue = nativePrice.usdPrice * Number(ethers.formatEther(balance.balance));
+        const nativeToken = nativePrice.nativePrice.symbol;
+        const nativeNetworth = {
+          nativePrice, nativeValue:utilities.formatPrice(nativeValue), nativeToken, nativeBalance: utilities.formatNumber(ethers.formatEther(balance.balance))
+        }
+
+        return res.status(200).json({addressOccurrences,nativeNetworth,chartArray,stats,tokens,collector});
 
     } catch(e) {
       next(e);

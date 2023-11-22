@@ -58,58 +58,17 @@ router.get('/api/wallet/history', async function(req,res,next) {
         // console.log(wallet_chains)
 
         // Used to fetch the last 7 days
-        const days = ["7","14","30","90"]
-        let day = req.query.days ? req.query.days : "14";
+        const days = ["7","14","30","60","90"]
+        let day = req.query.days ? req.query.days : "7";
         if (!days.includes(day)) {
-            day = "14"
+            day = "7"
         }
 
         const one_week_ago = moment().subtract(Number(day), 'days').format('YYYY-MM-DD');
 
         // Get decoded transactions for the wallet
         const history = await fetchDecodedTransactions(address, wallet_chains, one_week_ago);
-        if(history) {
-            for(let tx of history) {
-                tx.native_transfers = [];
-                tx.value_decimal = ethers.formatEther(tx.value);
-
-                if(tx.internal_transactions && tx.internal_transactions.length > 0) {
-                    for(let internalTx of tx.internal_transactions) {
-                        internalTx.value_decimal = ethers.formatUnits(internalTx.value);
-                        internalTx.action = internalTx.from.toLowerCase() === address.toLowerCase() ? "sent" : internalTx.to.toLowerCase() === address.toLowerCase() ? "received" : "contract movement";
-                        internalTx.type = "Internal Tx";
-                        
-                        if(internalTx.value !== "0" && internalTx.action === "sent" || internalTx.value !== "0" && internalTx.action === "received") {
-                            internalTx.type = "Native Transfer";
-                            tx.native_transfers.push({
-                                from_address: internalTx.from,
-                                from_address_label: null,
-                                to_address: internalTx.to,
-                                to_address_label: null,
-                                value: internalTx.value,
-                                value_decimal: ethers.formatEther(internalTx.value),
-                                action: internalTx.action,
-                                internal_transaction:true
-                            });
-                        }
-                    }
-                }
-
-                if(tx.value !== "0") {
-                    tx.native_transfers.push({
-                        from_address: tx.from_address,
-                        from_address_label: tx.from_address_label,
-                        to_address: tx.to_address,
-                        to_address_label: tx.to_address_label,
-                        value: tx.value,
-                        value_decimal: ethers.formatEther(tx.value),
-                        action: tx.from_address.toLowerCase() === address.toLowerCase() ? "sent" : "received",
-                        internal_transaction:false
-                    })
-                }
-            }
-        }
-
+     
         // Get decoded transactions for the wallet
         const nft_transfers = await fetchNftTransfers(address, wallet_chains, one_week_ago);
 
@@ -197,12 +156,12 @@ router.get('/api/wallet/history', async function(req,res,next) {
         }
 
         // Fetch all ERC20 transfers
-        const erc20_transfers = await fetchERC20Transfers(address, wallet_chains, one_week_ago);
+        const token_transfers = await fetchERC20Transfers(address, wallet_chains, one_week_ago);
 
         // Label each as ERC20 and push into master history array
         const foundChain = chains.find(item => item.chain === chain);
-        if (erc20_transfers) {
-          erc20_transfers.forEach(item => {
+        if (token_transfers) {
+          token_transfers.forEach(item => {
             item.action = (item.from_address.toLowerCase() === address.toLowerCase()) ? "sent" : "received";
             item.type = "erc20";
             item.contract_type = "ERC20";
@@ -210,10 +169,10 @@ router.get('/api/wallet/history', async function(req,res,next) {
           });
         }
 
-        const transfersWithPrices = await utilities.enrichTransfersWithPrices(erc20_transfers, chain);
+        // const transfersWithPrices = await utilities.enrichTransfersWithPrices(token_transfers, chain);
         // return console.log(transfersWithPrices)
-        // return res.status(200).json({transactions:history,nftTransfers:nft_transfers,erc20Transfers:erc20_transfers})
-        let master_history =  mergeTransactions(history, nft_transfers, transfersWithPrices, address);
+        // return res.status(200).json({transactions:history,nftTransfers:nft_transfers,erc20Transfers:token_transfers})
+        let master_history = await mergeTransactions(history, nft_transfers, token_transfers, address,foundChain.chain);
 
         for(const tx of master_history) {
             tx.category = setTransactionCategory(tx, address);
@@ -237,72 +196,114 @@ router.get('/api/wallet/history', async function(req,res,next) {
     }
 });
 
-function mergeTransactions(transactions, nft_transfers, erc20_transfers, wallet_address) {
+async function mergeTransactions(transactions, nft_transfers, token_transfers, wallet_address, chain) {
+    try {
 
-    let masterArray = [];
-    let hashLookup = {};
+        let masterArray = [];
+        let hashLookup = {};
 
-    // 1. Add transactions to master array and hash_lookup for quick access
-    transactions.forEach(txn => {
-        // Create a copy of the transaction and add placeholders for transfers
-        let txnCopy = { ...txn, erc20_transfers: [], nft_transfers: [] };
-        masterArray.push(txnCopy);
-        hashLookup[txn.hash] = txnCopy;
-    });
+        // 1. Add transactions to master array and hash_lookup for quick access
+        transactions.forEach(txn => {
+            // Create a copy of the transaction and add placeholders for transfers
+            let txnCopy = { ...txn, token_transfers: [], nft_transfers: [] };
+            masterArray.push(txnCopy);
+            hashLookup[txn.hash] = txnCopy;
+        });
 
-    // 2. Group erc20_transfers and nft_transfers by transaction hash
-    erc20_transfers.forEach(erc20 => {
-        if (hashLookup[erc20.transaction_hash]) {
-            hashLookup[erc20.transaction_hash].erc20_transfers.push(erc20);
-        } else {
-            // If no matching transaction, create one
-            let newTxn = {
-                hash: erc20.transaction_hash,
-                block_timestamp: erc20.block_timestamp,
-                manuallyCreated: true,
-                erc20_transfers: [erc20],
-                nft_transfers: [],
-                internal_transactions: [],
-                native_transfers: []
-            };
-            masterArray.push(newTxn);
-            hashLookup[erc20.transaction_hash] = newTxn;
+        // 2. Group token_transfers and nft_transfers by transaction hash
+        for(const erc20 of token_transfers) {
+            if (hashLookup[erc20.transaction_hash]) {
+                hashLookup[erc20.transaction_hash].token_transfers.push(erc20);
+            } else {
+                // If no matching transaction, create one
+                let new_tx = await fetchTx(erc20.transaction_hash, chain)
+                new_tx.token_transfers = [erc20];
+                new_tx.nft_transfers = [];
+                new_tx.native_transfers = [];
+                new_tx.approvals = [];
+                
+                masterArray.push(new_tx);
+                hashLookup[erc20.transaction_hash] = new_tx;
+            }
         }
-    });
 
-    nft_transfers.forEach(nft => {
-        if (hashLookup[nft.transaction_hash]) {
-            hashLookup[nft.transaction_hash].nft_transfers.push(nft);
-        } else {
-            // If no matching transaction, create one
-            let newTxn = {
-                hash: nft.transaction_hash,
-                block_timestamp: nft.block_timestamp,
-                manuallyCreated: true,
-                erc20_transfers: [],
-                nft_transfers: [nft],
-                internal_transactions: [],
-                native_transfers: []
-            };
-            masterArray.push(newTxn);
-            hashLookup[nft.transaction_hash] = newTxn;
+        for(const nft of nft_transfers) {
+            if (hashLookup[nft.transaction_hash]) {
+                hashLookup[nft.transaction_hash].nft_transfers.push(nft);
+            } else {
+                // If no matching transaction, create one
+                // Treat NFTs differently because it's so slow with all the spam NFT transfers, we don't want to
+                //look up tx for every single one
+
+                let new_tx = {
+                    hash: nft.transaction_hash,
+                    block_number: nft.block_number,
+                    to_address:nft.to_address,
+                    to_address_label:nft.to_address_label,
+                    from_address:nft.from_address,
+                    from_address_label:nft.from_address_label,
+                    block_timestamp: nft.block_timestamp,
+                    manuallyCreated: true,
+                    token_transfers: [],
+                    nft_transfers: [nft],
+                    internal_transactions: [],
+                    native_transfers: [],
+                    approvals: [],
+                    possible_spam: nft.possible_spam
+                };
+                // let new_tx = await fetchTx(nft.transaction_hash, chain)
+                // new_tx.token_transfers = [];
+                // new_tx.nft_transfers = [nft];
+                // new_tx.native_transfers = [];
+                // new_tx.approvals = [];
+                
+                masterArray.push(new_tx);
+                hashLookup[nft.transaction_hash] = new_tx;
+            }
         }
-    });
 
-    // Sort transactions by timestamp in descending order
-    masterArray.sort((a, b) => b.block_timestamp.localeCompare(a.block_timestamp));
-    return masterArray;
+        // Sort transactions by timestamp in descending order
+        masterArray.sort((a, b) => b.block_timestamp.localeCompare(a.block_timestamp));
+        return masterArray;
+        
+    } catch(e) {
+        throw new Error(e);
+    }
+}
+
+async function fetchTx(hash,chain) {
+    try {
+        const url = new URL(`${baseURL}/transaction/${hash}/verbose?include=internal_transactions&chain=${chain}`);
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-API-Key': API_KEY,
+            },
+        });
+
+        if (!response.ok) {
+            console.log(response.statusText)
+            const message = await response.json();
+            throw new Error(message);
+          }
+        
+          const transaction = await response.json();
+          return transaction;
+    } catch(e) {
+        throw new Error(e);
+    }
 }
 
 const setTransactionCategory = (transaction, wallet_address) => {
 
-    const { native_transfers, erc20_transfers, nft_transfers, decoded_call, value, to_address, from_address } = transaction;
+    const { native_transfers, token_transfers, nft_transfers, approvals, decoded_call, value, to_address, from_address } = transaction;
 
     const nativeSent = native_transfers.some(transfer => transfer.action === "sent");
     const nativeReceived = native_transfers.some(transfer => transfer.action === "received");
     
-    const erc20Sent = erc20_transfers.some(transfer => transfer.action === "sent");
-    const erc20Received = erc20_transfers.some(transfer => transfer.action === "received");
+    const erc20Sent = token_transfers.some(transfer => transfer.action === "sent");
+    const erc20Received = token_transfers.some(transfer => transfer.action === "received");
 
     const nftSent = nft_transfers.some(transfer => transfer.action === "sent");
     const nftReceived = nft_transfers.some(transfer => transfer.action === "received");
@@ -320,31 +321,36 @@ const setTransactionCategory = (transaction, wallet_address) => {
     if (nftSentNotBurn && (erc20Received || value > 0)) return "NFT Sale";
 
     // // Rules for Internal Tx transfers
-    if (!erc20_transfers.length && !nft_transfers.length && nativeSent) return "Send";
-    if (!erc20_transfers.length && !nft_transfers.length && nativeReceived) return "Receive";
+    if (!token_transfers.length && !nft_transfers.length && nativeSent) return "Send";
+    if (!token_transfers.length && !nft_transfers.length && nativeReceived) return "Receive";
 
     // New rules for simple send and receive
-    if (!erc20_transfers.length && !nft_transfers.length && !decoded_call && value > 0) {
+    if (!token_transfers.length && !nft_transfers.length && !decoded_call && value > 0) {
         if (to_address === wallet_address.toLowerCase()) return "Receive";
         if (from_address === wallet_address.toLowerCase()) return "Send";
     }
 
 
-    // if (!erc20_transfers.length && !nft_transfers.length && decoded_call) return decoded_call.label;
-    if (!erc20_transfers.length && !nft_transfers.length && decoded_call) return "Contract Interaction";
-    if (!erc20_transfers.length && !nft_transfers.length && !decoded_call) return "Contract Interaction";
+    // if (!token_transfers.length && !nft_transfers.length && decoded_call) return decoded_call.label;
+    if (!token_transfers.length && !nft_transfers.length && !native_transfers.length && approvals.length > 0) return "Approve";
+    if (!token_transfers.length && !nft_transfers.length && decoded_call) return "Contract Interaction";
+    if (!token_transfers.length && !nft_transfers.length && !decoded_call) return "Contract Interaction";
 
     
 
-    if (erc20_transfers.length && nft_transfers.length) {
+    if (nativeSent && erc20Received || nativeReceived && erc20Sent) {
+        return "Token Swap";
+    }
+
+    if (token_transfers.length && nft_transfers.length) {
         if (erc20Sent && nftReceived) return "NFT Purchase";
         if (erc20Received && nftSent) return "NFT Sale";
         if (erc20Received && erc20Sent) return "Token Swap";
     }
 
-    if (erc20_transfers.length && !nft_transfers.length) {
-        const allReceivedErc20 = erc20_transfers.every(transfer => transfer.action === 'Received');
-        const allSentErc20 = erc20_transfers.every(transfer => transfer.action === 'Sent');
+    if (token_transfers.length && !nft_transfers.length) {
+        const allReceivedErc20 = token_transfers.every(transfer => transfer.action === 'Received');
+        const allSentErc20 = token_transfers.every(transfer => transfer.action === 'Sent');
 
         // New rule for token swap when all are received actions and value is > 0
         if (allReceivedErc20 && value > 0) return "Token Swap";
@@ -357,7 +363,7 @@ const setTransactionCategory = (transaction, wallet_address) => {
         if (erc20Received && erc20Sent) return "Token Swap";
     }
 
-    if (nft_transfers.length && !erc20_transfers.length) {
+    if (nft_transfers.length && !token_transfers.length) {
         if (nft_transfers.some(transfer => transfer.isAirdrop)) return "Airdrop";
         if (nft_transfers.some(transfer => transfer.isMint && !transfer.isAirdrop)) return "Mint";
         if (nft_transfers.some(transfer => transfer.isBurn && !transfer.isAirdrop && !transfer.isMint)) return "Burn";
@@ -368,20 +374,20 @@ const setTransactionCategory = (transaction, wallet_address) => {
     return "unknown";
 }
 
-const setTransactionLabel = (transaction, category) => {
-    const { erc20_transfers, nft_transfers, native_transfers, value, to_address, to_address_label, from_address, from_address_label } = transaction;
+const getNativeTokenName = (chainName) => {
+    switch (chainName) {
+        case 'eth':
+            return 'ETH';
+        case 'polygon':
+            return 'MATIC';
+        // ... You can add more chains here
+        default:
+            return 'ETH';  // default to ETH
+    }
+};
 
-    const getNativeTokenName = (chainName) => {
-        switch (chainName) {
-            case 'eth':
-                return 'ETH';
-            case 'polygon':
-                return 'MATIC';
-            // ... You can add more chains here
-            default:
-                return 'ETH';  // default to ETH
-        }
-    };
+const setTransactionLabel = (transaction, category) => {
+    const { token_transfers, nft_transfers, native_transfers, approvals, value, to_address, to_address_label, from_address, from_address_label } = transaction;
 
     const formatAddress = (address) => {
         if (!address) return '';
@@ -398,7 +404,7 @@ const setTransactionLabel = (transaction, category) => {
 
     switch (category) {
         case 'Send': {
-            if (!erc20_transfers.length && !nft_transfers.length) {
+            if (!token_transfers.length && !nft_transfers.length) {
                 const nativeTokenName = getNativeTokenName(transaction.chain);
 
                 const sentTransfers = native_transfers.filter(transfer => transfer.action === 'sent');
@@ -414,7 +420,7 @@ const setTransactionLabel = (transaction, category) => {
             }
         }
         case 'Receive': {
-            if (!erc20_transfers.length && !nft_transfers.length) {
+            if (!token_transfers.length && !nft_transfers.length) {
                 const nativeTokenName = getNativeTokenName(transaction.chain);
 
                 const receiveTransfers = native_transfers.filter(transfer => transfer.action === 'received');
@@ -448,6 +454,18 @@ const setTransactionLabel = (transaction, category) => {
             const burnedCount = nft_transfers.filter(transfer => transfer.isBurn && !transfer.isMint && !transfer.isAirdrop).length;
             return `Burned ${burnedCount} NFT${burnedCount > 1 ? 's' : ''}`;
         }
+        case 'Approve': {
+            const weiThreshold = BigInt('999999000000000000000000');
+            let amount = approvals[0].value;
+            if(amount > weiThreshold) {
+                amount = "unlimited"
+                transaction.approvals[0].is_unlimited = true;
+            } else {
+                amount = ethers.formatEther(amount);
+            }
+            
+            return `Approved ${amount} ${approvals[0].token.token_symbol ? approvals[0].token.token_symbol : approvals[0].token.token_address_label ? approvals[0].token.token_address_label : approvals[0].token.token_address}`;
+        }
         case 'Received NFT': {
             const receivedCount = nft_transfers.filter(transfer => transfer.action === 'received' && !transfer.isMint && !transfer.isAirdrop).length;
 
@@ -469,7 +487,7 @@ const setTransactionLabel = (transaction, category) => {
             return `Sent ${sentCount} NFT${sentCount > 1 ? 's' : ''}`;
         }
         case 'Sent Token': {
-            const sentTransfers = erc20_transfers.filter(transfer => transfer.action === 'sent');
+            const sentTransfers = token_transfers.filter(transfer => transfer.action === 'sent');
             const sentCount = sentTransfers.length;
             
             if (sentCount === 1) {
@@ -481,7 +499,7 @@ const setTransactionLabel = (transaction, category) => {
         }
         
         case 'Received Token': {
-            const receivedTransfers = erc20_transfers.filter(transfer => transfer.action === 'received');
+            const receivedTransfers = token_transfers.filter(transfer => transfer.action === 'received');
             const receivedCount = receivedTransfers.length;
             
             if (receivedCount === 1) {
@@ -500,8 +518,11 @@ const setTransactionLabel = (transaction, category) => {
             return `Sold ${soldCount} NFT${soldCount > 1 ? 's' : ''}`;
         }
         case 'Token Swap': {
-            const sentToken = erc20_transfers.find(transfer => transfer.action === 'sent');
-            const receivedToken = erc20_transfers.find(transfer => transfer.action === 'received');
+            const sentToken = token_transfers.find(transfer => transfer.action === 'sent');
+            const receivedToken = token_transfers.find(transfer => transfer.action === 'received');
+
+            const sentNative = native_transfers.find(transfer => transfer.action === 'sent');
+            const receivedNative = native_transfers.find(transfer => transfer.action === 'received');
             
             const nativeTokenName = getNativeTokenName(transaction.chain);
             
@@ -511,6 +532,10 @@ const setTransactionLabel = (transaction, category) => {
                 return `Swapped ${sentToken.value_decimal} ${sentToken.token_symbol} for ${ethers.formatUnits(value, 18)} ${nativeTokenName}`;
             } else if (receivedToken && value > 0) {
                 return `Swapped ${ethers.formatUnits(value, 18)} ${nativeTokenName} for ${receivedToken.value_decimal} ${receivedToken.token_symbol}`;
+            } else if (sentNative && receivedToken) {
+                return `Swapped ${sentNative.value_decimal} ${nativeTokenName} for ${receivedToken.value_decimal} ${receivedToken.token_symbol}`;
+            } else if (receivedNative && sentToken) {
+                return `Swapped ${sentToken.value_decimal} ${sentToken.token_symbol} for ${receivedNative.value_decimal} ${nativeTokenName}`;
             }
 
             return 'ERC20 Swap';  // Fallback label just in case.
@@ -525,7 +550,7 @@ const setTransactionLabel = (transaction, category) => {
 
 const checkForPossibleSpam = (transaction) => {
     if (transaction.nft_transfers.some(transfer => transfer.possible_spam) || 
-        transaction.erc20_transfers.some(transfer => transfer.possible_spam)) {
+        transaction.token_transfers.some(transfer => transfer.possible_spam)) {
         return true;
     } else {
         return false;
@@ -537,7 +562,7 @@ const getDefaultImage = (transaction) => {
     const allowedCategories = [
         'Send', 'Receive', 'Airdrop', 'Mint', 'Burn', 
         'Received NFT', 'Sent NFT', 'Sent Token', 
-        'Received Token', 'NFT Purchase', 'NFT Sale', 'Token Swap'
+        'Received Token', 'NFT Purchase', 'NFT Sale', 'Token Swap', 'Approve'
     ];
 
     // If the category is not in the allowed list, return null or a default image.
@@ -545,6 +570,13 @@ const getDefaultImage = (transaction) => {
 
     // Helper to safely access nested properties
     const getNestedProperty = (obj, ...args) => args.reduce((o, k) => (o && o[k] !== undefined) ? o[k] : null, obj);
+
+    if(transaction.approvals && transaction.approvals.length > 0) {
+        let approval = transaction.approvals[0];
+        if(approval.token.token_logo) {
+            return { imageUrl:approval.token.token_logo, hasImage:true}
+        }
+    }
 
     // Prioritize NFTs
     const nft = transaction.nft_transfers.find(transfer => {
@@ -569,7 +601,7 @@ const getDefaultImage = (transaction) => {
     }
 
     // Check for ERC20 tokens
-    const erc20Transfer = transaction.erc20_transfers.find(transfer => {
+    const erc20Transfer = transaction.token_transfers.find(transfer => {
         return transfer.token_name;
     });
 
@@ -611,9 +643,88 @@ async function fetchDecodedTransactions(address, chains, fromDate) {
             const transactions = await response.json();
 
             if(transactions.result && transactions.result.length > 0) {
-                for(let item of transactions.result) {
-                    item.chain = chain.chain;
-                    all_transactions.push(item);
+                for(let tx of transactions.result) {
+                    tx.chain = chain.chain;
+
+                    tx.native_transfers = [];
+                    tx.approvals = [];
+                    tx.value_decimal = ethers.formatEther(tx.value);
+
+                    if(tx.internal_transactions && tx.internal_transactions.length > 0) {
+                        for(let internalTx of tx.internal_transactions) {
+                            internalTx.value_decimal = ethers.formatUnits(internalTx.value);
+                            internalTx.action = internalTx.from.toLowerCase() === address.toLowerCase() ? "sent" : internalTx.to.toLowerCase() === address.toLowerCase() ? "received" : "contract movement";
+                            internalTx.type = "Internal Tx";
+                            
+                            if(internalTx.value !== "0" && internalTx.action === "sent" || internalTx.value !== "0" && internalTx.action === "received") {
+                                internalTx.type = "Native Transfer";
+                                tx.native_transfers.push({
+                                    block_number: tx.block_number,
+                                    block_timestamp: tx.block_timestamp,
+                                    from_address: internalTx.from,
+                                    from_address_label: null,
+                                    to_address: internalTx.to,
+                                    to_address_label: null,
+                                    value: internalTx.value,
+                                    value_decimal: ethers.formatEther(internalTx.value),
+                                    action: internalTx.action,
+                                    internal_transaction:true,
+                                    token_symbol: getNativeTokenName(tx.chain),
+                                    token_logo: `/images/${tx.chain}-icon.png`
+                                });
+                            }
+                        }
+                    }
+
+                    if(tx.value !== "0") {
+                        tx.native_transfers.push({
+                            block_number: tx.block_number,
+                            block_timestamp: tx.block_timestamp,
+                            from_address: tx.from_address,
+                            from_address_label: tx.from_address_label,
+                            to_address: tx.to_address,
+                            to_address_label: tx.to_address_label,
+                            value: tx.value,
+                            value_decimal: ethers.formatEther(tx.value),
+                            action: tx.from_address.toLowerCase() === address.toLowerCase() ? "sent" : "received",
+                            internal_transaction:false,
+                            token_symbol: getNativeTokenName(tx.chain),
+                            token_logo: `/images/${tx.chain}-icon.png`
+                        })
+                    }
+
+                    if(tx.decoded_call && tx.decoded_call.signature && tx.decoded_call.signature === "approve(address,uint256)") {
+                        let approval_token = await fetchTokenMetadata(tx.to_address,chain.chain);
+
+                        const _valueParam = tx.decoded_call.params.find(param => param.name === "_value");
+                        const spenderAddress = tx.decoded_call.params.find(param => param.name === "_spender").value;
+
+                        let spender = await fetchTokenMetadata(spenderAddress,chain.chain);
+                        
+                        console.log("found")
+                        console.log(spender);
+                        
+                        tx.approvals.push({
+                            value: _valueParam ? _valueParam.value : tx.value,
+                            value_decimal: _valueParam ? ethers.formatEther(_valueParam.value) : ethers.formatEther(tx.value),
+                            token: {
+                                token_address: tx.to_address,
+                                token_address_label: tx.to_address_label,
+                                token_name:approval_token ? approval_token.name : "not a token",
+                                token_logo:approval_token ? approval_token.logo : "not a token",
+                                token_symbol:approval_token ? approval_token.symbol : "not a token"
+                            },
+                            spender: {
+                                address: spender ? spender.address : spenderAddress ? spenderAddress : "unknown",
+                                address_label: spender ? spender.address_label : null,
+                                name: spender ? spender.name : null,
+                                symbol: spender ? spender.symbol : null,
+                                logo: spender ? spender.logo : null
+                            }
+                        });
+                        
+                    }
+                    all_transactions.push(tx);
                 }
             }
           requestWeight += Number(response.headers.get('x-request-weight'));
@@ -706,16 +817,22 @@ async function fetchNFTMetadata(chunk, chain) {
   return nftMetadata && nftMetadata.length > 0 ? nftMetadata : [];
 }
 
-const fetchTokenMetadata = async (address) => {
-  const response = await fetch(`${baseURL}/erc20/metadata?` + new URLSearchParams({
-    chain: chain,
-    address: address
-  }), {
+const fetchTokenMetadata = async (address,chain) => {
+    console.log(`Fetching ${address} and ${chain}`)
+  const response = await fetch(`${baseURL}/erc20/metadata?addresses=${address}&chain=${chain}`, {
     method: 'get',
     headers: { accept: 'application/json', 'X-API-Key': `${API_KEY}` }
   });
 
-  return response.json();
+  if (!response.ok) {
+    console.log(response.statusText)
+    const message = await response.json();
+    throw new Error(message);
+  }
+
+  const token = await response.json();
+
+  return token[0];
 };
 
 export default router;

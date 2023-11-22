@@ -45,6 +45,7 @@ function App() {
           walletAddress: data.address,
           balance:data.balance.balance,
           chains: data.active_chains,
+          nativeNetworth: data.nativeNetworth,
           profile: {
             walletAge: data.walletAge,
             firstSeenDate: data.firstSeenDate, 

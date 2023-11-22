@@ -1,4 +1,5 @@
 import * as utilities from '../utilities.js';
+import CopyToClipboard from './CopyToClipboard';
 
 const HistoryItem = ({ transaction }) => {
     // Function to get the image URL
@@ -23,13 +24,27 @@ const HistoryItem = ({ transaction }) => {
     // Function to render the transaction summary
     const renderTransactionSummary = () => (
         <div className="tx-summary tx-details">
-            <div className="title">Transaction summary</div>
+            <div className="title">Transaction Summary</div>
             <ul>
-                {renderSummaryItem('Transaction Hash', transaction?.hash)}
+                <li>
+                    <div className="data-point">Transaction Hash</div>
+                    <div className="value copy-container">{transaction?.hash}
+                        <CopyToClipboard valueToCopy={transaction?.hash}>
+                            <button></button>
+                        </CopyToClipboard>
+                    </div>
+                </li>
                 {renderSummaryItem('Block Number', transaction?.block_number)}
                 {renderSummaryItem('Timestamp', transaction?.block_timestamp)}
-                {renderSummaryItem('Gas Fee', transaction?.gas_fee)}
-                {renderSummaryItem('Gas Paid', transaction?.gas_paid)}
+                {renderSummaryItem('Transaction Type', transaction?.category)}
+                {renderSummaryItem('Transaction Method', transaction?.decoded_call?.signature ? `${transaction?.decoded_call?.label}` : 'Unknown')}
+                {renderSummaryItem('From Address', transaction?.from_address)}
+                {renderSummaryItem('To Address', transaction?.to_address)}
+                {renderSummaryItem('Native Transfers', transaction?.native_transfers.length)}
+                {renderSummaryItem('Token Transfers (ERC20)', transaction?.token_transfers.length)}
+                {renderSummaryItem('NFT Transfers', transaction?.nft_transfers.length)}
+                {renderSummaryItem('Approvals', transaction?.approvals.length)}
+                {renderSummaryItem('Internal Transactions', transaction?.internal_transactions.length)}
             </ul>
         </div>
     );
@@ -46,7 +61,7 @@ const HistoryItem = ({ transaction }) => {
     };
 
     const renderTokenList = (action) => {
-        return transaction?.erc20_transfers?.filter(item => item.action === action).map((item, index) => (
+        return transaction?.token_transfers?.filter(item => item.action === action).map((item, index) => (
             <li key={item.address ?? index}>
                 <div className="image" style={{ backgroundImage: `url(${item.token_logo})` }}></div>
                 <div>{item.value_decimal} {item.token_name}</div>
@@ -57,27 +72,47 @@ const HistoryItem = ({ transaction }) => {
     const renderNativeList = (action) => {
         return transaction?.native_transfers?.filter(item => item.action === action).map((item, index) => (
             <li key={item.address ?? index}>
-            <div>{item.value_decimal} ETH {item.internal_transaction && <span>(via internal tx)</span>}</div>
+                <div className="image" style={{ backgroundImage: `url(${item.token_logo})` }}></div>
+            <div>{item.value_decimal} {item.token_symbol} {item.internal_transaction && <span>(via internal tx)</span>}</div>
             </li>
         ));
     };
 
     const renderInternalTxs = () => {
         return (
-            <div className="tx-details tx-summary">
+            <div className="tx-details tx-summary internal-txs">
             <div className="title">Internal Transactions</div>
-            <div className="tx-detail">
-            <ul>
-                {transaction?.internal_transactions?.map((item, index) => (
-                    <li key={item.id ?? index}>
-                    <div>To: {item.to}</div>
-                    <div>From: {item.from}</div>
-                    <div>Value: {item.value_decimal}</div>
-                    <div>Type: {item.type}</div>
-                    </li>
-                ))}
-                </ul>
+            <div>
+
+                {(transaction?.internal_transactions && transaction?.internal_transactions.length > 0) && (
+                    <ul>
+                    {transaction?.internal_transactions?.map((item, index) => (
+                        <li key={item.id ?? index}>
+                            <div className="heading-group">
+                                <div className="heading">To address</div>
+                                <div className="value">{utilities.shortAddress(item.to)}</div>
+                            </div>
+    
+                            <div className="heading-group">
+                                <div className="heading">From address</div>
+                                <div className="value">{utilities.shortAddress(item.from)}</div>
+                            </div>
+    
+                            <div className="heading-group">
+                                <div className="heading">Value</div>
+                                <div className="value">{item.value_decimal}</div>
+                            </div>
+    
+                        </li>
+                    ))}
+                    </ul>
+                )}
+                
             </div>
+
+            {(!transaction?.internal_transactions || transaction?.internal_transactions.length === 0) && (
+                <p>No internal transactions.</p>
+            )}
         </div>
         )
     };
@@ -85,11 +120,11 @@ const HistoryItem = ({ transaction }) => {
 
     // Function to render the asset movements section
     const renderAssetMovements = () => (
-        <div className="tx-details tx-summary">
-            <div className="title">Asset movements</div>
+        <div className="tx-details tx-summary wallet-card">
+            <div className="title">Asset Movements</div>
             <div className="tx-detail">
                 <div className="sent">
-                    <div>Sent</div>
+                    <div className="heading">Sent</div>
                     <ul>
                         {renderNFTList("sent")}
                         {renderTokenList("sent")}
@@ -97,7 +132,7 @@ const HistoryItem = ({ transaction }) => {
                     </ul>
                 </div>
                 <div className="received">
-                    <div>Received</div>
+                <div className="heading">Received</div>
                     <ul>
                         {renderNFTList("received")}
                         {renderTokenList("received")}
@@ -111,7 +146,7 @@ const HistoryItem = ({ transaction }) => {
 
     const renderInteractedAddresses = () => (
         <div className="tx-details tx-summary">
-            <div className="title">Addresses involved in this transaction</div>
+            <div className="title">Unique Addresses in this Transaction</div>
             <div className="tx-detail">
                 
             </div>
@@ -123,8 +158,8 @@ const HistoryItem = ({ transaction }) => {
         <>
             {renderTransactionSummary()}
             {renderAssetMovements()}
-            {renderInternalTxs()}
             {renderInteractedAddresses()}
+            {renderInternalTxs()}
         </>
     );
 };
