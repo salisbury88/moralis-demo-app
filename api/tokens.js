@@ -87,12 +87,13 @@ router.get('/api/wallet/tokens', async function(req,res,next) {
 
       let indexToInsert = 1; // Inserting at index 1
       verified_tokens_sorted.splice(0, 0, {
-        token_address: foundChain.wrappedTokenAddress,
+        token_address: String(foundChain.wrappedTokenAddress).toLowerCase(),
         symbol: nativePrice.nativePrice.symbol,
         name: nativePrice.nativePrice.name,
         logo: `/images/${chain}-icon.png`,
         decimals: 18,
         amount: ethers.formatEther(balance.balance),
+        balance: balance.balance,
         possible_spam: false,
         price: utilities.formatPrice(nativePrice.usdPrice),
         percentChange: 0,

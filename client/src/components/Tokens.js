@@ -72,6 +72,7 @@ const Tokens = () => {
   };
 
   const handleDropdownChange = (selectedValue) => {
+    setActiveToken(null);
     setGlobalDataCache(prevData => ({
       ...prevData,
       nftsLoaded:false,
