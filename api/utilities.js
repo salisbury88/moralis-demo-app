@@ -579,3 +579,87 @@ export function findEarliestAndLatestTimestamps(data) {
     latest: latestTimestamp !== 0 ? new Date(latestTimestamp).toISOString() : null,
   };
 }
+
+
+export function uniqueAddressesFromTransaction(transaction) {
+  let addresses = new Set();
+
+  if (transaction.from_address) {
+    if (transaction.from_address_label) {
+      addresses.add(`${transaction.from_address} ${transaction.from_address_label}`);
+    } else {
+      addresses.add(transaction.from_address);
+    }
+  }
+
+  if (transaction.to_address) {
+    if (transaction.to_address_label) {
+      addresses.add(`${transaction.to_address} ${transaction.to_address_label}`);
+    } else {
+      addresses.add(transaction.to_address);
+    }
+  }
+
+  if (transaction.token_transfers) {
+    transaction.token_transfers.forEach(transfer => {
+      if (transfer.from_address) {
+        if (transfer.from_address_label) {
+          addresses.add(`${transfer.from_address} ${transfer.from_address_label}`);
+        } else {
+          addresses.add(transfer.from_address);
+        }
+      }
+      if (transfer.to_address) {
+        if (transfer.to_address_label) {
+          addresses.add(`${transfer.to_address} ${transfer.to_address_label}`);
+        } else {
+          addresses.add(transfer.to_address);
+        }
+      }
+    });
+  }
+
+  if (transaction.nft_transfers) {
+    transaction.nft_transfers.forEach(nft => {
+      if (nft.from_address) {
+        if (nft.from_address_label) {
+          console.log(`Adding ${nft.from_address_label}`)
+          addresses.add(`${nft.from_address} ${nft.from_address_label}`);
+        } else {
+          console.log(`Adding ${nft.from_address}`)
+          addresses.add(nft.from_address);
+        }
+      }
+      if (nft.to_address) {
+        if (nft.to_address_label) {
+          addresses.add(`${nft.to_address} ${nft.to_address_label}`);
+        } else {
+          addresses.add(nft.to_address);
+        }
+      }
+    });
+  }
+
+  if (transaction.approvals) {
+    transaction.approvals.forEach(approval => {
+      if (approval.token.token_address) {
+        if (approval.token.token_address_label) {
+          addresses.add(`${approval.token.token_address} ${approval.token.token_address_label}`);
+        } else {
+          addresses.add(approval.token.token_address);
+        }
+      }
+      if (approval.spender.address) {
+        if (approval.spender.address_label) {
+          addresses.add(`${approval.spender.address} ${approval.spender.address_label}`);
+        } else {
+          addresses.add(approval.spender.address);
+        }
+      }
+    });
+  }
+
+  // Similar logic for internal_transactions, approvals, native_transfers
+
+  return Array.from(addresses);
+}

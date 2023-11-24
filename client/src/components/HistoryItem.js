@@ -204,8 +204,16 @@ const HistoryItem = ({ transaction }) => {
     const renderInteractedAddresses = () => (
         <div className="tx-details tx-summary">
             <div className="title">Unique Addresses in this Transaction</div>
-            <div className="tx-detail">
-                
+            <div>
+             {(transaction.uniqueAddresses && transaction.uniqueAddresses.length > 0) && (
+                    <ul>
+                    {transaction.uniqueAddresses?.map((item, index) => (
+                        <li key={item.id ?? index}>
+                            {item}
+                        </li>
+                    ))}
+                    </ul>
+                )}
             </div>
         </div>
     );

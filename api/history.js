@@ -188,6 +188,7 @@ router.get('/api/wallet/history', async function(req,res,next) {
             tx.label = setTransactionLabel(tx,tx.category)
             tx.image = getDefaultImage(tx);
             tx.possible_spam = checkForPossibleSpam(tx);
+            tx.uniqueAddresses = utilities.uniqueAddressesFromTransaction(tx);
         }
 
         // let master_history2 = await utilities.enrichNFTTransactionsWithUSDValue(master_history, utilities.networkData);
@@ -230,7 +231,6 @@ async function mergeTransactions(transactions, nft_transfers, token_transfers, w
                 new_tx.nft_transfers = [];
                 new_tx.native_transfers = [];
                 new_tx.approvals = [];
-                
                 masterArray.push(new_tx);
                 hashLookup[erc20.transaction_hash] = new_tx;
             }
@@ -265,7 +265,6 @@ async function mergeTransactions(transactions, nft_transfers, token_transfers, w
                 // new_tx.nft_transfers = [nft];
                 // new_tx.native_transfers = [];
                 // new_tx.approvals = [];
-                
                 masterArray.push(new_tx);
                 hashLookup[nft.transaction_hash] = new_tx;
             }
@@ -654,10 +653,17 @@ async function fetchDecodedTransactions(address, chains, fromDate) {
             if(transactions.result && transactions.result.length > 0) {
                 for(let tx of transactions.result) {
                     tx.chain = chain.chain;
+                    tx.value_decimal = ethers.formatEther(tx.value);
 
                     tx.native_transfers = [];
                     tx.approvals = [];
-                    tx.value_decimal = ethers.formatEther(tx.value);
+                    delete tx.logs;
+                    delete tx.receipt_gas_used;
+                    delete tx.receipt_contract_address;
+                    delete tx.receipt_cumulative_gas_used;
+                    delete tx.receipt_root;
+                    delete tx.receipt_status;
+
 
                     if(tx.internal_transactions && tx.internal_transactions.length > 0) {
                         for(let internalTx of tx.internal_transactions) {
