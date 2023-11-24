@@ -51,31 +51,88 @@ const HistoryItem = ({ transaction }) => {
 
     // Function to render the list of NFTs based on the action
     const renderNFTList = (action) => {
-        return transaction?.nft_transfers?.filter(item => item.action === action).map((item, index) => (
-            <li key={item.data?.token_id ?? item.token_id ?? index}>
-                <div className="image" style={{ backgroundImage: `url(${image(item)})` }}></div>
-                <div>{item.data?.name ?? utilities.shortAddress(item.token_address)}</div>
-                <div>#{item.data?.token_id ?? item.token_id}</div>
-            </li>
-        ));
+        if(action === "sent") {
+            return transaction?.nft_transfers?.filter(item => item.action === action).map((item, index) => (
+                <li key={item.data?.token_id ?? item.token_id ?? index}>
+                    <div className="image" style={{ backgroundImage: `url(${image(item)})` }}></div>
+                        <div>
+                        <div>{item.data?.name ?? utilities.shortAddress(item.token_address)} #{item.data?.token_id ?? item.token_id}</div>
+                        <div className="secondary-line">
+                            to {utilities.shortAddress(item.to_address)}
+                            {item.isBurn && (
+                                <span className="burn">Burn</span>
+                            )}
+                        </div>
+                        </div>
+                    
+                </li>
+            ));
+        } else {
+            return transaction?.nft_transfers?.filter(item => item.action === action).map((item, index) => (
+                <li key={item.data?.token_id ?? item.token_id ?? index}>
+                    <div className="image" style={{ backgroundImage: `url(${image(item)})` }}></div>
+                    <div>
+                        <div>{item.data?.name ?? utilities.shortAddress(item.token_address)} #{item.data?.token_id ?? item.token_id}</div>
+                        <div className="secondary-line">
+                        from {utilities.shortAddress(item.from_address)}
+                        {item.isMint && (
+                            <span className="mint">Mint</span>
+                        )}
+                        </div>
+                        
+                   </div>
+                </li>
+            ));
+        }
     };
 
     const renderTokenList = (action) => {
-        return transaction?.token_transfers?.filter(item => item.action === action).map((item, index) => (
-            <li key={item.address ?? index}>
-                <div className="image" style={{ backgroundImage: `url(${item.token_logo})` }}></div>
-                <div>{item.value_decimal} {item.token_name}</div>
-            </li>
-        ));
+        if(action === "sent") {
+            return transaction?.token_transfers?.filter(item => item.action === action).map((item, index) => (
+                <li key={item.address ?? index}>
+                    <div className="image" style={{ backgroundImage: `url(${item.token_logo})` }}></div>
+                    <div>
+                        {item.value_decimal} {item.token_symbol}
+                        <div>to {utilities.shortAddress(item.to_address)}</div>
+                    </div>
+                    
+                </li>
+            ));
+        } else {
+            return transaction?.token_transfers?.filter(item => item.action === action).map((item, index) => (
+                <li key={item.address ?? index}>
+                    <div className="image" style={{ backgroundImage: `url(${item.token_logo})` }}></div>
+                    <div>{item.value_decimal} {item.token_name}</div>
+                    <div>from {utilities.shortAddress(item.from_address)}</div>
+                </li>
+            ));
+        }
+        
     };
 
     const renderNativeList = (action) => {
-        return transaction?.native_transfers?.filter(item => item.action === action).map((item, index) => (
-            <li key={item.address ?? index}>
-                <div className="image" style={{ backgroundImage: `url(${item.token_logo})` }}></div>
-            <div>{item.value_decimal} {item.token_symbol} {item.internal_transaction && <span>(via internal tx)</span>}</div>
-            </li>
-        ));
+        if(action === "sent") {
+            return transaction?.native_transfers?.filter(item => item.action === action).map((item, index) => (
+                <li key={item.address ?? index}>
+                    <div className="image" style={{ backgroundImage: `url(${item.token_logo})` }}></div>
+                    <div>
+                        <div>{item.value_decimal} {item.token_symbol} {item.internal_transaction && <span>(via internal tx)</span>}</div>
+                        <div className="secondary-line">to {utilities.shortAddress(item.to_address)}</div>
+                    </div>
+                </li>
+            ));
+        } else {
+            return transaction?.native_transfers?.filter(item => item.action === action).map((item, index) => (
+                <li key={item.address ?? index}>
+                    <div className="image" style={{ backgroundImage: `url(${item.token_logo})` }}></div>
+                    <div>
+                        <div>{item.value_decimal} {item.token_symbol} {item.internal_transaction && <span>(via internal tx)</span>}</div>
+                        <div className="secondary-line">from {utilities.shortAddress(item.from_address)}</div>
+                    </div>
+                </li>
+            ));
+        }
+        
     };
 
     const renderInternalTxs = () => {

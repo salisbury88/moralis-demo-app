@@ -37,7 +37,7 @@ const Overview = () => {
   useEffect(() => {
     if (globalDataCache.walletAddress && !globalDataCache.stats) {
       setLoading(true)
-      fetchProfile();
+      fetchProfile(globalDataCache.selectedChain || localStorage.getItem('selectedChain') || 'eth');
       fetchNetworth()
     }
   }, []);

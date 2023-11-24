@@ -21,7 +21,7 @@ app.use('/', apiIndex);
 app.use('/', tokenApi);
 app.use('/', nftApi);
 app.use('/', historyApi);
-const chains = ['eth', 'polygon', 'bsc', 'fantom', 'avalanche', 'arbitrum', 'cronos', 'palm'];
+const chains = ['eth', 'polygon', 'bsc', 'base', 'gnosis', 'optimism', 'fantom', 'avalanche', 'arbitrum', 'cronos', 'palm'];
 function validateChain(req, res, next) {
   const requestedChain = req.query.chain;
 

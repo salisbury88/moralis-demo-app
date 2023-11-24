@@ -71,6 +71,38 @@ router.get('/api/wallet/tokens', async function(req,res,next) {
         ...verified_tokens.filter(obj => obj.value !== undefined),
         ...verified_tokens.filter(obj => obj.value === undefined)
       ];
+
+
+
+      const get_balance = await fetch(`${baseURL}/${address}/balance?chain=${req.chain}`,{
+        method: 'get',
+        headers: {accept: 'application/json', 'X-API-Key': `${API_KEY}`}
+      });
+  
+      const balance = await get_balance.json();
+      console.log(balance)
+
+      const nativePrice = await utilities.getNativePrice(req.chain);
+      const nativeValue = nativePrice.usdPrice * Number(ethers.formatEther(balance.balance));
+
+      let indexToInsert = 1; // Inserting at index 1
+      verified_tokens_sorted.splice(0, 0, {
+        token_address: foundChain.wrappedTokenAddress,
+        symbol: nativePrice.nativePrice.symbol,
+        name: nativePrice.nativePrice.name,
+        logo: `/images/${chain}-icon.png`,
+        decimals: 18,
+        amount: ethers.formatEther(balance.balance),
+        possible_spam: false,
+        price: utilities.formatPrice(nativePrice.usdPrice),
+        percentChange: 0,
+        value: utilities.formatPrice(nativeValue),
+        valueChange: 0,
+      });
+
+      console.log(foundChain.wrappedTokenAddress)
+
+
     return res.status(200).json({
         verified_tokens:verified_tokens_sorted,
         spam_tokens

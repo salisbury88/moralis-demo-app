@@ -25,28 +25,46 @@ export const networkData = [
 
 export const chains = [{
   chain:"eth",
-  id:"0x1"
+  id:"0x1",
+  "wrappedTokenAddress":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
 }, {
   chain: "polygon",
-  id: "0x89"
+  id: "0x89",
+  "wrappedTokenAddress":"0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"
 }, {
   chain: "bsc",
-  id: "0x38"
+  id: "0x38",
+  "wrappedTokenAddress":"0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
 }, {
   chain: "fantom",
-  id: "0xfa"
+  id: "0xfa",
+  "wrappedTokenAddress":"0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83"
 }, {
   chain: "avalanche",
-  id: "0xa86a"
+  id: "0xa86a",
+  "wrappedTokenAddress":"0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7"
 }, {
   chain: "arbitrum",
-  id: "0xa4b1"
+  id: "0xa4b1",
+  "wrappedTokenAddress":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
 }, {
   chain: "cronos",
-  id: "0x19"
+  id: "0x19",
+  "wrappedTokenAddress":"0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
 }, {
   chain: "palm",
   id: "0x2a15c308d"
+}, {
+  chain: "base",
+  id: "0x2105",
+  "wrappedTokenAddress":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+}, {
+  chain: "gnosis",
+  id: "0x64"
+}, {
+  chain: "optimism",
+  id: "0xa",
+  "wrappedTokenAddress":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
 }];
 
 export const calcAge = (dob) => {
@@ -96,6 +114,12 @@ export const calcAge = (dob) => {
             return 'Cronos';
         case 'arbitrum':
             return 'Arbitrum';
+        case 'base':
+              return 'Base';
+        case 'gnosis':
+                return 'Gnosis';
+        case 'optimism':
+              return 'Optimism';
         default:
             return '';
     }
@@ -355,7 +379,7 @@ const fetchHistoricalPrice = async (tokenAddress, blockNumber, chain) => {
 };
 
 export async function getNativePrice(chain) {
-  if(chain && chain === "arbitrum") chain = "eth";
+  if(chain && chain === "arbitrum" || chain && chain === "base" || chain && chain === "optimism")  chain = "eth";
   const foundChain = networkData.find(item => item.id === chain);
   
   if (!foundChain) {

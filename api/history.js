@@ -29,6 +29,15 @@ const chains = [{
 }, {
     chain: "palm",
     id: "0x2a15c308d"
+}, {
+    chain: "base",
+    id: "0x2105"
+}, {
+    chain: "gnosis",
+    id: "0x64"
+}, {
+    chain: "optimism",
+    id: "0xa"
 }];
 const API_KEY = "HsPkTtNaTcNOj8TWnAG2ZvcjOIzW82gUZMATjQ4tOcHa30wES5GkHgbWAq5pG3Fu";
 const baseURL = "https://deep-index.moralis.io/api/v2.2";

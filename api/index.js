@@ -5,10 +5,10 @@ import { ethers } from 'ethers';
 import * as utilities from './utilities.js';
 
 const router = express.Router();
-const chains = ['eth', 'polygon', 'bsc', 'fantom', 'avalanche', 'arbitrum', 'cronos', 'palm'];
+const chains = ['eth', 'polygon', 'bsc', 'base', 'gnosis', 'optimism', 'fantom', 'avalanche', 'arbitrum', 'cronos', 'palm'];
 const API_KEY = "HsPkTtNaTcNOj8TWnAG2ZvcjOIzW82gUZMATjQ4tOcHa30wES5GkHgbWAq5pG3Fu";
 const baseURL = "https://deep-index.moralis.io/api/v2.2";
-
+const randomAddresses = []
 router.get('/api', async function(req,res,next) {
     try {
       res.json({ message: 'Hello from the backend!' });
@@ -235,7 +235,10 @@ router.post('/api/wallet', async function(req,res,next) {
         });
         
         let tokens = [];
+        console.log(`Chain is ${chain}`)
         const foundChain = utilities.chains.find(item => item.chain === chain);
+        console.log(`Found chain is`)
+        console.log(foundChain)
         console.log(foundChain)
         if (response.ok) {
             tokens = await response.json();
