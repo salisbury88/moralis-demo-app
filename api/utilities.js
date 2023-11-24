@@ -11,7 +11,7 @@ export const networkData = [
     "name":"Polygon","id":"polygon","wrappedTokenAddress":"0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"
   },
   {
-    "name":"Binance","id":"binance","wrappedTokenAddress":"0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+    "name":"Binance","id":"bsc","wrappedTokenAddress":"0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
   },
   {
     "name":"Avalanche","id":"avalanche","wrappedTokenAddress":"0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7"
