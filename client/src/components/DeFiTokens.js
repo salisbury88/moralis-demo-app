@@ -232,9 +232,10 @@ const renderNFTTokenList = (protocol) => (
         {/* Assuming globalDataCache.tokensData is an array */}
 
 
-        <h3>Wallet Summary</h3>
+        
         {globalDataCache.defi && (
         <>
+            <h3>Wallet Summary</h3>
             <div className="summary-section">
                 <div className="row">
                     <div className="col-lg-3">

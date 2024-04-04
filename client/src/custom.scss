@@ -53,6 +53,34 @@ h1, h2 {
 #defi-page {
     max-width:1000px;
     margin:0 auto;
+
+    h3 {
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+
+    ul.summary-protocols {
+        display: flex;
+        flex-wrap:wrap;
+        margin-left: -15px;
+        margin-right: -15px;
+        img {
+            max-width:30px;
+        }
+        li {
+            width: 100%;
+            background: #041938;
+            display: flex;
+            margin: 10px 15px;
+            flex-grow: 1;
+            max-width: 17%;
+            padding: 15px;
+            border-radius: 7px;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+    }
     .protocol-details {
         display: flex;
         align-items: center;
