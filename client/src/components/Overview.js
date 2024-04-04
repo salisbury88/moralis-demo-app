@@ -43,6 +43,7 @@ const Overview = () => {
   }, []);
 
   const fetchProfile = (chain) => {
+    
     setLoading(true);
   fetch(`${process.env.REACT_APP_API_URL}/api/wallet/profile?wallet=${globalDataCache.walletAddress}&chain=${chain}`)
         .then((response) => {

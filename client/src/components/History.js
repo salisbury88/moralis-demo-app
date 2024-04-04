@@ -159,7 +159,12 @@ const History = () => {
                         <div className="secondary-line">
                           Spender: {item.approvals[0].spender.address_label ? item.approvals[0].spender.address_label : item.approvals[0].spender.address}
                         </div>
+                        
                       )}
+
+                        <div className="secondary-line">
+                          Transaction hash: {item.hash}
+                        </div>
                     </div>
                   </div>
                 </div>

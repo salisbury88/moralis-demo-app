@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Networth from './components/Networth';
 import Overview from './components/Overview';
 import Tokens from './components/Tokens';
 import DeFiTokens from './components/DeFiTokens';
 import NFTs from './components/NFTs';
 import History from './components/History';
+import Historyv2 from './components/Historyv2';
+import MarketData from './components/MarketData';
 import NavBar from './components/NavBar';
 import WalletForm from './components/WalletForm';
+import LivePortfolio from './components/LivePortfolio';
 import Loader from './components/Loader';
 import { DataProvider, useData } from './DataContext';
 import './custom.scss';
+
+
+// import io from "socket.io-client";
 
 function Root() {
   return (
@@ -27,6 +34,7 @@ function App() {
 
   const handleWalletSubmit = async (address) => {
     setLoading(true);
+
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/wallet?chain=${globalDataCache.selectedChain ? globalDataCache.selectedChain : 'eth'}`, {
         method: 'POST',
@@ -38,14 +46,15 @@ function App() {
       
       if (response.ok) {
         const data = await response.json();
-        hasData = true;
+        hasData = false;
         
         setGlobalDataCache({
           selectedChain: localStorage.getItem('selectedChain') || 'eth',
           walletAddress: data.address,
-          balance:data.balance.balance,
+          balance:data.balance ? data.balance.balance : 0,
           chains: data.active_chains,
           nativeNetworth: data.nativeNetworth,
+          networth: data.networth,
           profile: {
             walletAge: data.walletAge,
             firstSeenDate: data.firstSeenDate, 
@@ -81,9 +90,11 @@ function App() {
               <Routes>
                 <Route path="/" element={<Overview />} />
                 <Route path="/tokens" element={<Tokens />} />
+                <Route path="/networth" element={<Networth />} />
                 <Route path="/defi" element={<DeFiTokens />} />
                 <Route path="/nfts" element={<NFTs />} />
-                <Route path="/history" element={<History />} />
+                <Route path="/history" element={<Historyv2 />} />
+                <Route path="/market-data" element={<MarketData />} />
               </Routes>
             </div>
           </>

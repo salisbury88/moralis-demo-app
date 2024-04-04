@@ -63,6 +63,14 @@ const NavBar = () => {
               History
             </NavLink>
           </li>
+          <li className="nav-item">
+            <NavLink 
+              to="/market-data" 
+              activeClassName="active"
+            >
+              Market Data
+            </NavLink>
+          </li>
         </ul>
       
       <button className="btn btn-sm btn-primary" onClick={clearCache}>

@@ -231,35 +231,88 @@ const renderNFTTokenList = (protocol) => (
         {error && <div className="text-red-500">{error}</div>}      
         {/* Assuming globalDataCache.tokensData is an array */}
 
+
+        <h3>Wallet Summary</h3>
         {globalDataCache.defi && (
         <>
             <div className="summary-section">
                 <div className="row">
-                    <div className="col-lg-4">
+                    <div className="col-lg-3">
                         <div className="wallet-card">
                             <div className="heading">Total Value</div>
-                            <div className="big-value">${globalDataCache.defi.totalUsdValue}</div>
+                            <div className="big-value">${globalDataCache.defi.protocols.total_value_usd ? globalDataCache.defi.protocols.total_value_usd : 0}</div>
                         </div>
                     </div>
 
-                    <div className="col-lg-4">
+                    <div className="col-lg-3">
                         <div className="wallet-card">
                             <div className="heading">Active Protocols</div>
-                            <div className="big-value">{globalDataCache.defi.activeProtocols}</div>
+                            <div className="big-value">{globalDataCache.defi.protocols.active_protocols}</div>
                         </div>
                     </div>
 
-                    <div className="col-lg-4">
+                    <div className="col-lg-3">
                         <div className="wallet-card">
                             <div className="heading">Current Positions</div>
-                            <div className="big-value">{globalDataCache.defi.totalDeFiPositions}</div>
+                            <div className="big-value">{globalDataCache.defi.protocols.total_positions}</div>
                         </div>
                     </div>
+
+                    <div className="col-lg-3">
+                        <div className="wallet-card">
+                            <div className="heading">Unclaimed Rewards</div>
+                            <div className="big-value">${globalDataCache.defi.totalRewards}</div>
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
 
+
+            <h3>Protocol Breakdown</h3>
+            <ul className="summary-protocols">
+
+              {globalDataCache.defi.protocols.protocols.map(protocol => (
+                <li>
+                  <img src={protocol.protocol_logo} alt={protocol.protocol_name} />
+                  <div>
+                    <div className="protocol-title">{protocol.protocol_name}</div>
+                    <div>{protocol.total_value_usd ? `- $${protocol.total_value_usd}` : null}</div>
+                    <div>{protocol.positions} positions</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
             {!loading && !error && globalDataCache.defi && globalDataCache.defi.totalDeFiPositions === 0 && (
             <h5>No DeFi positions found. More protocols will be supported soon.</h5>
+            )}
+
+
+          <h3>Wallet Positions</h3>
+
+            {globalDataCache.defi.defiPositions && globalDataCache.defi.defiPositions.length > 0 && (
+              <>
+                {globalDataCache.defi.protocols.protocols.map(protocol => (
+                  <>
+                    <div className="wallet-card" key={protocol.name_name}>
+                        <div className="protocol-details">
+                            <img src={protocol.protocol_logo} alt={protocol.protocol_name} />
+                            <div className="protocol-title">{protocol.protocol_name} {protocol.total_value_usd ? `- $${protocol.total_value_usd}` : null}</div>
+                            <div>{protocol.positions} positions</div>
+
+                            {protocol.unclaimed_total_value_usd && (
+                              <div>Rewards available</div>
+                            )}
+                              <Link to={protocol.protocol_url} target="_blank">
+                                <button className="btn btn-outline icon btn-sm">Manage Positions <ExternalLinkIcon width="15" /></button>
+                              </Link>
+                        </div>
+                    </div>
+                  </>
+                ))}
+              </>
             )}
 
             {globalDataCache.defi.defiPositions && globalDataCache.defi.defiPositions.length > 0 && (
@@ -270,7 +323,13 @@ const renderNFTTokenList = (protocol) => (
                             <div className="wallet-card" key={protocol.protocolId}>
                                 <div className="protocol-details">
                                     <img src={protocol.protocolLogo} alt={protocol.protocolName} />
-                                    <div className="protocol-title">{protocol.protocol} {protocol.totalUsd ? `- $${protocol.totalUsd}` : null}</div>
+                                    <div className="protocol-title">{protocol.protocol} {protocol.totalUsd ? `- $${protocol.totalUsd}` : null}
+                                      {protocol.protocolId === "uniswap-v3" && (
+                                        <>
+                                        - ${globalDataCache.defi.uniswapValue} (${globalDataCache.defi.uniswapRewards} in unclaimed rewards)
+                                        </>
+                                      )}
+                                    </div>
                                       <Link to={protocol.protocolUrl} target="_blank">
                                         <button className="btn btn-outline icon btn-sm">Manage Positions <ExternalLinkIcon width="15" /></button>
                                       </Link>

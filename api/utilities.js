@@ -21,7 +21,18 @@ export const networkData = [
   },
   {
     "name":"Cronos","id":"cronos","wrappedTokenAddress":"0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"
-}];
+  },
+  {
+    "name": "Optimism",
+    "id": "optimism",
+    "wrappedTokenAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  },
+  {
+    "name": "Gnosis",
+    "id": "gnosis",
+    "wrappedTokenAddress": "0x9c58bacc331c9aa871afd802db6379a98e80cedb"
+  }
+];
 
 export const chains = [{
   chain:"eth",
@@ -60,7 +71,8 @@ export const chains = [{
   "wrappedTokenAddress":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
 }, {
   chain: "gnosis",
-  id: "0x64"
+  id: "0x64",
+  "wrappedTokenAddress":"0x9c58bacc331c9aa871afd802db6379a98e80cedb"
 }, {
   chain: "optimism",
   id: "0xa",
@@ -265,7 +277,8 @@ export const fetchPricesForChunk = async (tokensChunk, chain) => {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json',
-              'X-API-Key': `${API_KEY}`
+              'X-API-Key': `${API_KEY}`,
+              'x-request-shadow-mode': 'rearch'
           },
           body: JSON.stringify({
             "tokens": addresses

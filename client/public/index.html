@@ -50,5 +50,58 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+
+    <!-- <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+      var socket = io();
+    </script> -->
+
+
+    <script type="module">
+      import { io } from "https://cdn.socket.io/4.7.4/socket.io.esm.min.js";
+    
+    const socket = io("ws://6.tcp.ngrok.io:15596", {
+      reconnectionDelayMax: 10000,
+      reconnect: true
+    });
+    socket.on("connect", () => {
+      socket.on('message', (payload) => {
+        console.log('message', payload.action, payload.response);
+      });
+    
+      socket.send({
+        action: 'getNativeBalance',
+        request: {
+          address: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',
+          chain: '0x1'
+        }
+      })
+    
+      socket.send({
+        action: 'getWalletNetWorth',
+        request: {
+          address: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',
+          chains: ['0x1']
+        }
+      })
+    
+      socket.send({
+        action: 'getWalletTokenBalances',
+        request: {
+          address: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',
+          chain: '0x1'
+        }
+      })
+    
+      socket.send({
+        action: 'getTokenPrice',
+        request: {
+          address: '0xB8c77482e45F1F44dE1745F52C74426C631bDD52',
+          chain: '0x1'
+        }
+      })
+    });
+    
+    </script>
   </body>
 </html>

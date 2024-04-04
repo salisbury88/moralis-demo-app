@@ -14,6 +14,30 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+import http from 'http';
+const server = http.createServer(app);
+import { Server } from "socket.io";
+
+// const io = new Server(server, {
+//   cors: {origin:"http://localhost:3000", methods: ["GET", "POST"]},
+// });
+
+// io.on("connection", (socket) => {
+//   console.log(`A user connected ${socket.id}`);
+
+//   socket.on('message', (payload) => {
+//     console.log(payload);
+//   })
+
+//   socket.send({
+//     action: 'getNativeBalance',
+//     request: {
+//       address: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',
+//       chain: '0x1'
+//     }
+//   })
+// });
+
 app.use(express.static(path.resolve(__dirname, './client/build')));
 app.use(validateChain);
 
@@ -63,6 +87,6 @@ if (process.env.NODE_ENV === 'production') {
 
 const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

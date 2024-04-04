@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-function TokenLogo({ tokenImage, tokenName }) {
+function TokenLogo({ tokenImage, tokenName, tokenSymbol }) {
     const [validImage, setValidImage] = useState(false);
 
     useEffect(() => {
@@ -41,12 +41,10 @@ function TokenLogo({ tokenImage, tokenName }) {
         validImage && tokenImage 
         ? <div><img src={tokenImage} alt={tokenName} /></div>
         : <div>
-        <div 
-            className="default-logo" 
-            style={{ background: getRandomColorWithOpacity(0.3) }}
-          >
-            {getFirstValidCharacter(tokenName)}
-          </div></div>
+            <div className="default-logo" style={{ background: getRandomColorWithOpacity(0.3) }}>
+              {tokenSymbol && tokenSymbol.length < 6 ? tokenSymbol : getFirstValidCharacter(tokenName ? tokenName : "?")}
+            </div>
+          </div>
     );
 }
 

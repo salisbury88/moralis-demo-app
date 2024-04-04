@@ -20,6 +20,7 @@ const DateDropDown = ({ onChange, days }) => {
                 <option key="30" value="30">30 days</option>
                 <option key="60" value="60">60 days</option>
                 <option key="90" value="90">90 days</option>
+                <option key="90" value="365">1 year</option>
             </select>
         </div>
     );

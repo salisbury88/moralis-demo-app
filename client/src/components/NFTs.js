@@ -228,6 +228,66 @@ const NFTs = () => {
                             
                           </ul>
                       </div>
+                    
+                    {activeNFT.last_sale && (
+                      <div className="nft-modal-content">
+                          <div className="subtitle">Last Sale Details</div>
+                          <p>Last sold for {activeNFT.last_sale.price_formatted} ETH ({activeNFT.last_sale.usd_price})</p>
+
+                          <ul className="table-list">
+                          <li>
+                              <div className="left">Amount Paid</div>
+                              <div className="right">{activeNFT.last_sale.price_formatted} {activeNFT.last_sale.token_symbol}</div>
+                            </li> 
+                            <li>
+                              <div className="left">Amount Paid (USD)</div>
+                              <div className="right">${activeNFT.last_sale.usd_price}</div>
+                            </li> 
+                            <li>
+                              <div className="left">Transaction Hash</div>
+                              <div className="right">
+                                <div className="copy-container">
+                                {utilities.shortAddress(activeNFT.last_sale.transaction_hash)}
+                                  <CopyToClipboard valueToCopy={activeNFT.last_sale.transaction_hash}>
+                                      <button></button>
+                                    </CopyToClipboard>
+                                </div>
+                                
+                              </div>
+                            </li>                            
+                            <li>
+                              <div className="left">Timestamp</div>
+                              <div className="right">{activeNFT.last_sale.block_timestamp}</div>
+                            </li>
+                            <li>
+                              <div className="left">Buyer Address</div>
+                              <div className="right">
+                                <div className="copy-container">
+                                {utilities.shortAddress(activeNFT.last_sale.buyer_address)}
+                                  <CopyToClipboard valueToCopy={activeNFT.last_sale.buyer_address}>
+                                      <button></button>
+                                    </CopyToClipboard>
+                                </div>
+                              </div>
+                            </li>
+                            <li>
+                              <div className="left">Seller Address</div>
+                              <div className="right">
+                                <div className="copy-container">
+                                {utilities.shortAddress(activeNFT.last_sale.seller_address)}
+                                  <CopyToClipboard valueToCopy={activeNFT.last_sale.seller_address}>
+                                      <button></button>
+                                    </CopyToClipboard>
+                                </div>
+                              </div>
+                            </li>
+                          
+                
+                            
+                          </ul>
+                      </div>
+                    )}
+
 
                       <div className="nft-modal-content">
                           <div className="subtitle">Token Provenance</div>
