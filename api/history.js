@@ -275,7 +275,7 @@ const fetchHistory = async (address, chain, from_date, to_date) => {
         }
         
         cursor = txs.cursor;
-        console.log(`Page ${txs.page}, cursor is ${txs.cursor}`)
+        console.log(`Page ${txs.page}, chain ${chain} cursor is ${txs.cursor}`)
 
         page = txs.page;
 

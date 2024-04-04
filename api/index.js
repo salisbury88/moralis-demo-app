@@ -74,123 +74,106 @@ router.get('/api/market-data', async function(req,res,next) {
 router.post('/api/wallet', async function(req,res,next) {
     try {
       let address = req.body.address;
-      let ens;
-      let unstoppable;
+    let ens;
+    let unstoppable;
 
+    // Prepare a list of promises for parallel execution
+    let promises = [];
+    let isENSAddress = address.indexOf(".eth") > -1;
 
-      // const get_token = await fetch(`${baseURL}/erc20/metadata?addresses=${address}`, {
-      //   method: 'GET',
-      //   headers: {
-      //       'Accept': 'application/json',
-      //       'X-API-Key': `${API_KEY}`
-      //   }
-      // });
-
-
-      // let token = await get_token.json();
-
-      // if(token[0].name != "" && token[0].decimals != "0") {
-
-      //   const get_transfers = await fetch(`${baseURL}/erc20/${address}/transfers`, {
-      //     method: 'GET',
-      //     headers: {
-      //         'Accept': 'application/json',
-      //         'X-API-Key': `${API_KEY}`
-      //     }
-      //   });
-
-      //   let transfers = await get_transfers.json();
-
-      //   const get_owners = await fetch(`${baseURL}/erc20/${address}/owners`, {
-      //     method: 'GET',
-      //     headers: {
-      //         'Accept': 'application/json',
-      //         'X-API-Key': `${API_KEY}`
-      //     }
-      //   });
-
-      //   let owners = await get_owners.json();
-
-      //   return res.status(200).json({address,token, transfers, owners, moment,isWallet:false});
-
-
-      // }
-
-
-      if(address.indexOf(".eth") > -1) {
-        const get_domain = await fetch(`${baseURL}/resolve/ens/${address}`, {
-          method: 'GET',
-          headers: {
-              'Accept': 'application/json',
-              'X-API-Key': `${API_KEY}`
-          }
-        });
-
-        let domain = await get_domain.json();
-        address = domain.address;
-        ens = req.body.address;
-      }
-
-      if(!ens) {
-        const get_ens = await fetch(`${baseURL}/resolve/${address}/reverse`, {
-          method: 'GET',
-          headers: {
-              'Accept': 'application/json',
-              'X-API-Key': `${API_KEY}`
-          }
-        });
-  
-        let ens_domain = await get_ens.json();
-        ens = ens_domain.address;
-      }
-
-
-      const get_ud = await fetch(`${baseURL}/resolve/${address}/domain`, {
+    if (isENSAddress) {
+      promises.push(fetch(`${baseURL}/resolve/ens/${address}`, {
         method: 'GET',
         headers: {
-            'Accept': 'application/json',
-            'X-API-Key': `${API_KEY}`
+          'Accept': 'application/json',
+          'X-API-Key': API_KEY
         }
-      });
+      }));
+    } else {
+      promises.push(fetch(`${baseURL}/resolve/${address}/reverse`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'X-API-Key': API_KEY
+        }
+      }));
+    }
 
-      let ud_domain = await get_ud.json();
-      unstoppable = ud_domain.name;
-
-
-      let isWhale = false;
-      let earlyAdopter = false;
-      let multiChainer = false;
-      let speculator = false;
-      let isFresh = false;
-  
-      const queryString = chains.map(chain => `chains=${chain}`).join('&');
-  
-      const response = await fetch(`${baseURL}/wallets/${address}/chains?${queryString}`, {
-          method: 'GET',
-          headers: {
-              'Accept': 'application/json',
-              'X-API-Key': `${API_KEY}`
-          }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Error fetching chains: ${response.statusText}`);
+    promises.push(fetch(`${baseURL}/resolve/${address}/domain`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'X-API-Key': API_KEY
       }
-      const active_chains = await response.json();
-  
-      const get_balance = await fetch(`${baseURL}/${address}/balance?chain=${req.chain}`,{
-        method: 'get',
-        headers: {accept: 'application/json', 'X-API-Key': `${API_KEY}`}
-      });
-  
-      const balance = await get_balance.json();
+    }));
 
-      const nativePrice = await utilities.getNativePrice(req.chain);
-      const nativeValue = nativePrice.usdPrice * Number(ethers.formatEther(balance.balance));
-      const nativeToken = nativePrice.nativePrice.symbol;
-      const nativeNetworth = {
-        nativePrice, nativeValue:utilities.formatPrice(nativeValue), nativeToken, nativeBalance: utilities.formatNumber(ethers.formatEther(balance.balance))
+    const [ensOrReverseResponse, udResponse] = await Promise.all(promises);
+
+    if (isENSAddress) {
+      let domain = await ensOrReverseResponse.json();
+      address = domain.address;
+      ens = req.body.address;
+    } else {
+      let ens_domain = await ensOrReverseResponse.json();
+      ens = ens_domain.address;
+    }
+
+    let ud_domain = await udResponse.json();
+    unstoppable = ud_domain.name;
+
+    // Fetching wallet chains and balance in parallel
+    const queryString = chains.map(chain => `chains=${chain}`).join('&');
+    const walletChainsPromise = fetch(`${baseURL}/wallets/${address}/chains?${queryString}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'X-API-Key': API_KEY
       }
+    });
+
+    const balancePromise = fetch(`${baseURL}/${address}/balance?chain=${req.chain}`, {
+      method: 'get',
+      headers: {
+        accept: 'application/json',
+        'X-API-Key': API_KEY
+      }
+    });
+
+    const [response, get_balance] = await Promise.all([walletChainsPromise, balancePromise]);
+
+    if (!response.ok) {
+      throw new Error(`Error fetching chains: ${response.statusText}`);
+    }
+    const active_chains = await response.json();
+    const balance = await get_balance.json();
+
+    const activeChains = active_chains.active_chains.map(chain => `chains=${chain.chain}`).join('&');
+    const fetch_networth = await fetch(`${baseURL}/wallets/${address}/net-worth?${activeChains}`,{
+      method: 'get',
+      headers: {accept: 'application/json', 'X-API-Key': `${API_KEY}`}
+    });
+
+    let networth = 0;
+    if (!fetch_networth.ok) {
+      console.log(`Error fetching net-worth: ${fetch_networth.statusText}`);
+    }
+
+    networth = await fetch_networth.json();
+
+    let networthDataLabels = [];
+    let networthDatasets = [];
+
+    networth.chains.forEach(function(item) {
+      networthDataLabels.push(item.chain);
+      networthDatasets.push(Number(item.networth_usd));
+    });
+
+    let isWhale = false;
+    let earlyAdopter = false;
+    let multiChainer = false;
+    let speculator = false;
+    let isFresh = false;
+
       //100 eth
       if(balance.balance > 100000000000000000000) isWhale = true;
   
@@ -231,7 +214,8 @@ router.post('/api/wallet', async function(req,res,next) {
   
       if(wallet_chains.length > 1) multiChainer = true;
       
-      return res.status(200).json({address,nativeNetworth,
+      return res.status(200).json({address,networth:networth.total_networth_usd,networthDataLabels,
+        networthDatasets,
         active_chains:wallet_chains, walletAge, firstSeenDate, lastSeenDate, ens,unstoppable,
         isWhale, earlyAdopter,multiChainer,speculator,balance:balance.balance, moment, isFresh
       });
@@ -239,184 +223,106 @@ router.post('/api/wallet', async function(req,res,next) {
       next(e);
     }
   });
+  
+  router.get('/api/wallet/profile', async function(req, res, next) {
+  try {
+    const address = req.query.wallet;
+    const chain = req.chain ? req.chain : 'eth';
 
-  router.post('/api/wallet/networth', async function(req,res,next) {
-    try {
-      let address = req.body.address;
-      let ens;
-      let unstoppable;
+    // Asynchronously fetch wallet stats, tokens, and net worth in parallel
+    const statsPromise = fetch(`${baseURL}/wallets/${address}/stats?chain=${chain}`, {
+      method: 'get',
+      headers: { accept: 'application/json', 'X-API-Key': API_KEY }
+    });
 
-      if(address.indexOf(".eth") > -1) {
-        const get_domain = await fetch(`${baseURL}/resolve/ens/${address}`, {
-          method: 'GET',
-          headers: {
-              'Accept': 'application/json',
-              'X-API-Key': `${API_KEY}`
+    const tokensPromise = fetch(`${baseURL}/wallets/${address}/tokens?chain=${chain}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'X-API-Key': API_KEY
+      }
+    });
+
+    // Initialize chart data for the last 90 days
+    let chart_data = [];
+    // Start from today
+    let currentDate = new Date();
+
+    for (let i = 0; i < 90; i++) {
+        let formattedDate = currentDate.toISOString().split('T')[0];
+        chart_data.push({ x: formattedDate, y: 0 });
+
+        // Subtract a day for the next iteration
+        currentDate.setDate(currentDate.getDate() - 1);
+    }
+
+    const days = moment().subtract(90, 'days').format('YYYY-MM-DD');
+    let cursor = null;
+    let all_txs = [];
+
+    // Fetch transactions within the last 90 days
+    do {
+
+      const response = await fetch(`${baseURL}/${address}?${cursor ? `cursor=${cursor}&`:''}`+ new URLSearchParams({
+          from_date: days,
+          chain:chain
+      }),{
+        method: 'get',
+        headers: {accept: 'application/json', 'X-API-Key': `${API_KEY}`}
+      });
+
+      const txs = await response.json();
+      cursor = txs.cursor;
+      
+      if(txs.result) {
+          for(let item of txs.result) {
+              all_txs.push(item)
           }
-        });
-
-        let domain = await get_domain.json();
-        address = domain.address;
-        ens = req.body.address;
       }
 
-      const queryString = chains.map(chain => `chains=${chain}`).join('&');
-      const response = await fetch(`${baseURL}/wallets/${address}/chains?${queryString}`, {
-          method: 'GET',
-          headers: {
-              'Accept': 'application/json',
-              'X-API-Key': `${API_KEY}`
+  } while (cursor !== "" && cursor !== null);
+
+    // Process transaction data for chart
+    if(all_txs.length > 0) {
+      all_txs.forEach(function(data) {
+          let blockDate = data.block_timestamp.split('T')[0];
+          // Find the corresponding date in the chartArray
+          let chartItem = chart_data.find(item => item.x === blockDate);
+
+          if (chartItem) {
+            chartItem.y += 1;
           }
-      });
-      const active_chains = await response.json();
-      console.log(active_chains)
-      let wallet_chains = [];
-      for(const chain of active_chains.active_chains) {
-        if(chain.first_transaction) {
-            wallet_chains.push(chain);
-        }
+      })
+  }
+
+  let chartArray = utilities.generateWeekArray(9);
+
+  utilities.updateChartArrayByWeek(chartArray, all_txs);
+  chartArray = chartArray.reverse()
+
+    // Resolve promises for wallet stats, tokens, and net worth
+    const [statsResponse, tokensResponse] = await Promise.all([statsPromise, tokensPromise]);
+    const stats = await statsResponse.json();
+    const tokens = await tokensResponse.json();
+
+    let collector = false;
+    if (Number(stats.nfts) > 20) {
+      collector = true;
     }
 
-      const get_networth = await fetch(`${baseURL}/wallets/${address}/net-worth?${queryString}&exclude_spam=true&exclude_unverified_contracts=true`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'X-API-Key': `${API_KEY}`
-          }
-      });
-      const networth = await get_networth.json();
-      console.log(networth)
+    // Construct and return the response
+    return res.status(200).json({
+      addressOccurrences: utilities.findAddressOccurrences(all_txs, address),
+      chartArray,
+      stats,
+      tokens: tokens.result,
+      collector
+    });
 
-      
-      wallet_chains.forEach(item => {
-        item.label = utilities.getChainName(item.chain);
-      });
-      return res.status(200).json({address,networth,active_chains:wallet_chains});
-    } catch(e) {
-      next(e);
-    }
-  });
-  
-  router.get('/api/wallet/profile', async function(req,res,next) {
-    try {
-        
-        const address = req.query.wallet;
-        const chain = req.chain ? req.chain : 'eth';
-        
-        const get_stats = await fetch(`${baseURL}/wallets/${address}/stats?chain=${chain}`,{
-          method: 'get',
-          headers: {accept: 'application/json', 'X-API-Key': `${API_KEY}`}
-        });
-
-        const stats = await get_stats.json();
-
-
-        let chart_data = [];
-        // Start from today
-        let currentDate = new Date();
-
-        for (let i = 0; i < 90; i++) {
-            let formattedDate = currentDate.toISOString().split('T')[0];
-            chart_data.push({ x: formattedDate, y: 0 });
-
-            // Subtract a day for the next iteration
-            currentDate.setDate(currentDate.getDate() - 1);
-        }
-
-        const days = moment().subtract(90, 'days').format('YYYY-MM-DD');
-        let cursor = null;
-        let all_txs = [];
-
-        do {
-
-            const response = await fetch(`${baseURL}/${address}?${cursor ? `cursor=${cursor}&`:''}`+ new URLSearchParams({
-                from_date: days,
-                chain:chain
-            }),{
-              method: 'get',
-              headers: {accept: 'application/json', 'X-API-Key': `${API_KEY}`}
-            });
-
-            const txs = await response.json();
-            cursor = txs.cursor;
-            
-            if(txs.result) {
-                for(let item of txs.result) {
-                    all_txs.push(item)
-                }
-            }
-
-        } while (cursor !== "" && cursor !== null);
-
-        
-        if(all_txs.length > 0) {
-            all_txs.forEach(function(data) {
-                let blockDate = data.block_timestamp.split('T')[0];
-                // Find the corresponding date in the chartArray
-                let chartItem = chart_data.find(item => item.x === blockDate);
-
-                if (chartItem) {
-                  chartItem.y += 1;
-                }
-            })
-        }
-
-        let chartArray = utilities.generateWeekArray(9);
-
-        utilities.updateChartArrayByWeek(chartArray, all_txs);
-        chartArray = chartArray.reverse()
-
-        const uniqueAddressList = utilities.findUniqueAddresses(all_txs);
-
-        const addressOccurrences = utilities.findAddressOccurrences(all_txs,address);
-
-        const response = await fetch(`${baseURL}/${address}/erc20?chain=${chain}`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-API-Key': `${API_KEY}`
-            }
-        });
-        
-        let tokens = [];
-        const foundChain = utilities.chains.find(item => item.chain === chain);
-        if (response.ok) {
-            tokens = await response.json();
-            for(const token of tokens) {
-              token.amount = ethers.formatUnits(token.balance, token.decimals);
-
-              if(!token.logo) {
-                token.logo = `https://d23exngyjlavgo.cloudfront.net/${foundChain.id}_${token.token_address}`;
-              }
-            }
-        }
-
-        let collector = false;
-        if(Number(stats.nfts) > 20) {
-          collector = true;
-        }
-
-
-        const get_balance = await fetch(`${baseURL}/${address}/balance?chain=${req.chain}`,{
-          method: 'get',
-          headers: {accept: 'application/json', 'X-API-Key': `${API_KEY}`}
-        });
-    
-        const balance = await get_balance.json();
-
-        const nativePrice = await utilities.getNativePrice(req.chain);
-        const nativeValue = nativePrice.usdPrice * Number(ethers.formatEther(balance.balance));
-        const nativeToken = nativePrice.nativePrice.symbol;
-        const nativeNetworth = {
-          nativePrice, nativeValue:utilities.formatPrice(nativeValue), nativeToken, nativeBalance: utilities.formatNumber(ethers.formatEther(balance.balance))
-        }
-
-        return res.status(200).json({addressOccurrences,nativeNetworth,chartArray,stats,tokens,collector});
-
-    } catch(e) {
-      next(e);
-    }
-  });
+  } catch (e) {
+    next(e);
+  }
+});
   
 router.get('/api/wallet/networth', async function(req,res,next) {
   try {

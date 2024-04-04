@@ -66,6 +66,7 @@ function ZerionTimeline({ transactions }) {
                     item.category === "nft purchase" ||
                     item.category === "nft sale" ||
                     item.category === "mint" ||
+                    item.category === "borrow" ||
                     item.category === "airdrop"
                     ?
                     <>
@@ -142,6 +143,7 @@ function ZerionTimeline({ transactions }) {
                             item.category === "mint" ||
                             item.category === "airdrop" ||
                             item.category === "token receive" ||
+                            item.category === "borrow" ||
                             item.category === "nft receive"
 
                             ?

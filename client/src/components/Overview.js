@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useData } from '../DataContext';
 import Skeleton from './Skeleton';
 import TxChart from './TxChart';
+import NetworthChart from './NetworthChart';
 import TokenLogo from './TokenLogo';
 import WalletInteractions from './WalletInteractions';
 import ChainDropDown from './ChainDropDown';
@@ -31,14 +32,12 @@ const Overview = () => {
       selectedChain:selectedValue
     }));
     fetchProfile(selectedValue);
-    fetchNetworth()
   };
 
   useEffect(() => {
     if (globalDataCache.walletAddress && !globalDataCache.stats) {
       setLoading(true)
       fetchProfile(globalDataCache.selectedChain || localStorage.getItem('selectedChain') || 'eth');
-      fetchNetworth()
     }
   }, []);
 
@@ -63,8 +62,7 @@ const Overview = () => {
             },
             interactions:data.addressOccurrences,
             tokenCount:data.tokens.length,
-            token_balances: data.tokens,
-            nativeNetworth: data.nativeNetworth
+            token_balances: data.tokens
           }));
           setLoading(false);
         })
@@ -72,25 +70,6 @@ const Overview = () => {
           setError(error);
           setLoading(false);
         });
-  }
-
-  const fetchNetworth = () => {
-    // fetch(`${process.env.REACT_APP_API_URL}/api/wallet/networth?wallet=${globalDataCache.walletAddress}`)
-    //       .then((response) => {
-    //         if (!response.ok) {
-    //           throw new Error('Network response was not ok');
-    //         }
-    //         return response.json();
-    //       })
-    //       .then((data) => {
-    //         setGlobalDataCache(prevData => ({
-    //           ...prevData,
-    //           networth: data
-    //         }));
-    //       })
-    //       .catch((error) => {
-    //         setError(error);
-    //       });
   }
 
   useEffect(() => {
@@ -141,77 +120,85 @@ const Overview = () => {
           <div className="title">Wallet Profile</div>
 
           <div className="row">
+              <div className="col-lg-9">
 
-            <div className="col">
-              <div className="profile-intro">
-                  <div>
-                    <img 
-                      src={`https://api.dicebear.com/7.x/identicon/svg?backgroundColor=b6e3f4&seed=${globalDataCache.walletAddress}`} 
-                      alt="profile"
-                    />
-                  </div>
+                <div className="row">
 
-                  <div>
-                    <div className="heading">Address</div>
-                    <div className="big-value networth copy-container">
-                      {utilities.shortAddress(globalDataCache.walletAddress)} 
-                      <CopyToClipboard valueToCopy={globalDataCache.walletAddress}>
-                        <button></button>
-                      </CopyToClipboard>
+                  <div className="col-lg-4">
+                    <div className="profile-intro">
+                        <div>
+                          <img 
+                            src={`https://api.dicebear.com/7.x/identicon/svg?backgroundColor=b6e3f4&seed=${globalDataCache.walletAddress}`} 
+                            alt="profile"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="heading">Address</div>
+                          <div className="big-value networth copy-container">
+                            {utilities.shortAddress(globalDataCache.walletAddress)} 
+                            <CopyToClipboard valueToCopy={globalDataCache.walletAddress}>
+                              <button></button>
+                            </CopyToClipboard>
+                          </div>
+                        </div>
                     </div>
                   </div>
-              </div>
-            </div>
-            
-            <div className="col networth">
-							<div className="heading">Native holdings</div>
-							<div className="big-value">
-                {(globalDataCache?.nativeNetworth && !loading) && (
-                  <>
-                  ${globalDataCache.nativeNetworth.nativeValue}
-                  <span className="native-holdings">({globalDataCache.nativeNetworth.nativeBalance} {globalDataCache.nativeNetworth.nativeToken})</span>
-                  </>
-                )}
-                {(!globalDataCache.nativeNetworth || loading) && (
-                  <div className="lines">
-                    <div className="line pulse"></div>
+
+                  <div className="col-lg-4">
+                      <div className="heading">Active chains</div>
+                      <ul className="big-value">
+                        {globalDataCache.chains.map(item => (
+                        <li className="chain" key={item.chain}>
+                            <img 
+                              src={`/images/${item.chain}-icon.png`} 
+                              id={`tooltip-${item.chain}`} // this ID is required for the tooltip
+                              alt={item.label}
+                            />
+                            <UncontrolledTooltip target={`tooltip-${item.chain}`} placement="top">
+                              {item.label}
+                            </UncontrolledTooltip>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                  <div className="col networth">
+                    <div className="heading">Cross-chain Networth</div>
+                    <div className="big-value">
+                    ${globalDataCache.networth}
+                    </div>
+                  </div>
+
                 </div>
-                )}
-                
+
+                <div className="row">
+
+                  <div className="col-lg-4">
+                    <div className="heading">First seen
+                      {globalDataCache?.profile?.isFresh && <span className="fresh">FRESH</span>}
+                    </div>
+                    <div className="big-value">{moment(globalDataCache.profile.firstSeenDate).fromNow()}</div>
+                  </div>
+
+                  <div className="col-lg-4">
+                    <div className="heading">Last seen</div>
+                    <div className="big-value">{moment(globalDataCache.profile.lastSeenDate).fromNow()}</div>
+                  </div>
+
+                </div>
+               
+
+
               </div>
-						</div>
 
-            <div className="col">
-							<div className="heading">Wallet age
-                {globalDataCache?.profile?.isFresh && <span className="fresh">FRESH</span>}
-							</div>
-							<div className="big-value">{globalDataCache?.profile?.walletAge}</div>
-						</div>
 
-            <div className="col">
-							<div className="heading">Last seen</div>
-							<div className="big-value">{moment(globalDataCache.profile.lastSeenDate).fromNow()}</div>
-						</div>
-
-            <div className="col">
-							<div className="heading">Active chains</div>
-							<ul className="big-value">
-                {globalDataCache.chains.map(item => (
-                 <li className="chain" key={item.chain}>
-                    <img 
-                      src={`/images/${item.chain}-icon.png`} 
-                      id={`tooltip-${item.chain}`} // this ID is required for the tooltip
-                      alt={item.label}
-                    />
-                    <UncontrolledTooltip target={`tooltip-${item.chain}`} placement="top">
-                      {item.label}
-                    </UncontrolledTooltip>
-                  </li>
-                ))}
-							</ul>
-						</div>
+              <div className="col-lg-2">
+                <NetworthChart chartArray={globalDataCache.networthArray} />
+              </div>
 
           </div>
+           
         </div>
       </div>
 
@@ -261,6 +248,7 @@ const Overview = () => {
                           <div className="heading">Token</div>
                           <div></div>
                           <div className="heading">Balance</div>
+                          <div className="heading">Value</div>
                         </li>
                           {globalDataCache.token_balances && globalDataCache.token_balances.filter(token => !token.possible_spam).slice(0,3).map(token => (
                             <li key={token.token_address}>
@@ -268,7 +256,8 @@ const Overview = () => {
                               <div>
                                 <div className="token-name">{token.symbol}</div>
                               </div>
-                              <div className="token-balance">{Number(token.amount).toFixed(2)}</div>
+                              <div className="token-balance">{Number(token.balance_formatted).toFixed(2)}</div>
+                              <div className="token-balance">${Number(token.usd_value).toFixed(2)}</div>
 
                               
                             </li>

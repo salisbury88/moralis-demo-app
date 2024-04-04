@@ -191,6 +191,7 @@ const Historyv2 = () => {
                  <div className="history-item">
                    <div className="history-icon">
                      <HistoryIcon category={item.category}/>
+                     <img className="mini-chain regular" src={`/images/${item.chain}-icon.png`}/>
                    </div>
                    <div className="history-category">
                      <div className="category"><HistoryCategory category={item.category}/>

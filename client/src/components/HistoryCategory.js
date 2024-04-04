@@ -49,6 +49,9 @@ function HistoryCategory({ category }) {
             case 'approve': {
                 return `Approval`;
             }
+            case 'borrow': {
+                return `Borrowed`;
+            }
             case 'contract interaction': {
                 return `Contract Interaction`;
             }

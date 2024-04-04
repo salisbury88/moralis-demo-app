@@ -534,10 +534,10 @@ router.get('/api/wallet/defi', async function(req,res,next) {
 
     
     const address = req.query.wallet;
-      const chain = req.query.chain ? req.query.chain : 'eth';
+    const chain = req.query.chain ? req.query.chain : 'eth';
 
     // Define both fetch requests as promises
-    const protocolsPromise = fetch(`https://deep-index-beta.moralis.io/api/v2.2/wallets/${address}/defi/summary`, {
+    const protocolsPromise = fetch(`https://deep-index-beta.moralis.io/api/v2.2/wallets/${address}/defi/summary?chain=${chain}`, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
@@ -545,7 +545,7 @@ router.get('/api/wallet/defi', async function(req,res,next) {
         }
     });
 
-    const positionsPromise = fetch(`https://deep-index-beta.moralis.io/api/v2.2/wallets/${address}/defi/positions`, {
+    const positionsPromise = fetch(`https://deep-index-beta.moralis.io/api/v2.2/wallets/${address}/defi/positions?chain=${chain}`, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',

@@ -279,8 +279,8 @@ const renderNFTTokenList = (protocol) => (
                   <img src={protocol.protocol_logo} alt={protocol.protocol_name} />
                   <div>
                     <div className="protocol-title">{protocol.protocol_name}</div>
-                    <div>{protocol.total_value_usd ? `- $${protocol.total_value_usd}` : null}</div>
-                    <div>{protocol.positions} positions</div>
+                    <div className="protocol-value">{protocol.total_value_usd ? `$${protocol.total_value_usd}` : null}</div>
+                    <div className="position-count">{protocol.positions} positions</div>
                   </div>
                 </li>
               ))}

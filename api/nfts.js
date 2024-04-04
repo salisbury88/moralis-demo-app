@@ -17,7 +17,7 @@ router.get('/api/wallet/nfts', async function(req,res,next) {
         let cursor = null;
         let page = 0;
         do {
-            const response = await fetch(`${baseURL}/${address}/nft?chain=${chain}&exclude_spam=false&normalizeMetadata=true&media_items=true&include_prices=true&cursor=${cursor}`, {
+            const response = await fetch(`${baseURL}/${address}/nft?chain=${chain}&exclude_spam=true&normalizeMetadata=true&media_items=true&include_prices=true&cursor=${cursor}`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',

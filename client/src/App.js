@@ -55,6 +55,10 @@ function App() {
           chains: data.active_chains,
           nativeNetworth: data.nativeNetworth,
           networth: data.networth,
+          networthArray: {
+            labels: data.networthDataLabels,
+            data:data.networthDatasets
+          },
           profile: {
             walletAge: data.walletAge,
             firstSeenDate: data.firstSeenDate, 
