@@ -148,7 +148,7 @@ router.post('/api/wallet', async function(req,res,next) {
     const balance = await get_balance.json();
 
     const activeChains = active_chains.active_chains.map(chain => `chains=${chain.chain}`).join('&');
-    const fetch_networth = await fetch(`${baseURL}/wallets/${address}/net-worth?${activeChains}`,{
+    const fetch_networth = await fetch(`${baseURL}/wallets/${address}/net-worth?${activeChains}&exclude_spam=true&exclude_unverified_contracts=true`,{
       method: 'get',
       headers: {accept: 'application/json', 'X-API-Key': `${API_KEY}`}
     });
@@ -163,10 +163,13 @@ router.post('/api/wallet', async function(req,res,next) {
     let networthDataLabels = [];
     let networthDatasets = [];
 
-    networth.chains.forEach(function(item) {
-      networthDataLabels.push(item.chain);
-      networthDatasets.push(Number(item.networth_usd));
-    });
+    if(networth.chains && networth.chains.length > 0) {
+      networth.chains.forEach(function(item) {
+        networthDataLabels.push(item.chain);
+        networthDatasets.push(Number(item.networth_usd));
+      });
+    }
+    
 
     let isWhale = false;
     let earlyAdopter = false;
@@ -235,7 +238,7 @@ router.post('/api/wallet', async function(req,res,next) {
       headers: { accept: 'application/json', 'X-API-Key': API_KEY }
     });
 
-    const tokensPromise = fetch(`${baseURL}/wallets/${address}/tokens?chain=${chain}`, {
+    const tokensPromise = fetch(`${baseURL}/wallets/${address}/tokens?exclude_spam=true&exclude_unverified_contracts=true&chain=${chain}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -355,7 +358,7 @@ router.get('/api/wallets/:address/tokens/output', async function(req,res,next) {
     const address = req.params.address;
     const chain = req.query.chain ? req.query.chain : 'eth';
 
-    const response = await fetch(`${baseURL}/wallets/${address}/tokens?chain=${chain}`, {
+    const response = await fetch(`${baseURL}/wallets/${address}/tokens?exclude_spam=true&exclude_unverified_contracts=true&chain=${chain}`, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
