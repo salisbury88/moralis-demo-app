@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation} from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import WalletViewer from './components/WalletPortfolio/WalletViewer';
@@ -24,10 +24,55 @@ const Navigation = () => {
   
   const handleClick = () => {
     navigate(`/`);
-    setGlobalDataCache({
-      selectedChain: 'eth'
-    })
+    setGlobalDataCache(prevData => ({
+      ...prevData,
+      balance: null,
+      chains: null,
+      chartArray: null,
+      days: null,
+      interactions:null,
+      nativeNetworth: null,
+      networth: null,
+      networthArray: null,
+      profile: null,
+      selectedChain: "eth",
+      stats: null,
+      tokenCount: null,
+      token_balances: null,
+      walletAddress: null,
+      token:null,
+      initialTokenLoaded: false
+    }));
   };
+
+  const fetchTopMarketCap = () => {
+    
+    setGlobalDataCache(prevData => ({
+      ...prevData,
+      topTokensLoaded:false
+    }));
+    fetch(`${process.env.REACT_APP_API_URL}/api/market-data/top-erc20`)
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch data');
+        return response.json();
+      })
+      .then(fetchedData => {
+        setGlobalDataCache(prevData => ({
+          ...prevData,
+          topTokensLoaded:true,
+          marketCap: fetchedData.top_tokens,
+        }));
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  }
+
+  useEffect(() => {
+    if (!globalDataCache.topTokensLoaded) {
+      fetchTopMarketCap()
+    }
+  }, []);
 
   if (location.pathname === '/') {
     return (

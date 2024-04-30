@@ -78,6 +78,36 @@ router.get('/api/market-data/movers', async function(req,res,next) {
     next(e);
   }
 });
+
+router.get('/api/market-data/top-erc20', async function(req,res,next) {
+  try {
+    const urls = [
+    
+      `${baseURL}/market-data/erc20s/top-tokens`,
+    ];
+
+    const fetchPromises = urls.map(url =>
+      fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'X-API-Key': API_KEY
+        }
+      }).then(response => response.json())
+    );
+
+    const [
+      top_tokens,
+    ] = await Promise.all(fetchPromises);
+
+    return res.status(200).json({
+      top_tokens
+    });
+
+  } catch(e) {
+    next(e);
+  }
+});
   
 router.post('/api/wallet', async function(req,res,next) {
     try {

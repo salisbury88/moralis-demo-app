@@ -61,15 +61,12 @@ router.post('/api/wallet/tokens/spam', async function(req,res,next) {
           totalTokens += 1;
           if(token.possible_spam) {
             spamTokens += 1;
-                console.log(`${token.token_address} spam`)
           } else {
                 nonSpamTokens += 1;
-                console.log(`${token.token_address} not spam`)
           }
 
           if(token.verified_contract) {
             verifiedTokens += 1;
-            console.log(`${token.token_address} verified`)
           }
         }
 

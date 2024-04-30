@@ -102,15 +102,23 @@ router.get('/api/token/:tokenAddress', async function(req,res,next) {
     try {
         let tokenAddress = req.params.tokenAddress;
 
-        const ownersPromise = fetch(`https://deep-index.moralis.io/api/v2.2/erc20/${tokenAddress}/owners?limit=50`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-API-Key': API_KEY
-                }
-            });
+        const ownersPromise = fetch(`${baseURL}/erc20/${tokenAddress}/owners?limit=50`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-API-Key': API_KEY
+            }
+        });
 
-        const [ownersResponse] = await Promise.all([ownersPromise]);
+        const transfersPromise = fetch(`${baseURL}/erc20/${tokenAddress}/transfers?limit=50`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-API-Key': API_KEY
+            }
+        });
+
+        const [ownersResponse, transfersResponse] = await Promise.all([ownersPromise, transfersPromise]);
 
         if (!ownersResponse.ok) {
             console.log(ownersResponse)
@@ -118,7 +126,14 @@ router.get('/api/token/:tokenAddress', async function(req,res,next) {
             return res.status(500).json(message);
         }
 
+        if (!transfersResponse.ok) {
+            console.log(transfersResponse)
+            const message = await transfersResponse.json();
+            return res.status(500).json(message);
+        }
+
         const tokenOwners = await ownersResponse.json();
+        const tokenTransfers = await transfersResponse.json();
         
         let topTenHolders = [];
         if(tokenOwners && tokenOwners.result && tokenOwners.result.length > 0) {
@@ -152,6 +167,7 @@ router.get('/api/token/:tokenAddress', async function(req,res,next) {
         });
 
         return res.status(200).json({
+            tokenTransfers: tokenTransfers.result,
             tokenOwners: tokenOwners.result,
             topTokenOwners: results,
             totalBalance,totalUsd,totalPercentage, commonTokens

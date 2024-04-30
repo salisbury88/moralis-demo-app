@@ -131,14 +131,14 @@ function TokenViewer() {
         });
   }
 
-  const fetchMovers = () => {
+  const fetchTopMarketCap = () => {
     setMoversLoading(true);
     setError(null);
     setGlobalDataCache(prevData => ({
       ...prevData,
       topTokensLoaded:false
     }));
-    fetch(`${process.env.REACT_APP_API_URL}/api/market-data/movers`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/market-data/top-erc20`)
       .then(response => {
         if (!response.ok) throw new Error('Failed to fetch data');
         return response.json();
@@ -147,7 +147,7 @@ function TokenViewer() {
         setGlobalDataCache(prevData => ({
           ...prevData,
           topTokensLoaded:true,
-          tokenMovers: fetchedData.top_movers,
+          marketCap: fetchedData.top_tokens,
         }));
         setMoversLoading(false);
       })
@@ -160,7 +160,7 @@ function TokenViewer() {
   useEffect(() => {
     if (!globalDataCache.topTokensLoaded) {
       setMoversLoading(true);
-      fetchMovers()
+      fetchTopMarketCap()
     }
   }, []);
 
@@ -195,9 +195,8 @@ function TokenViewer() {
                   <p className="divider">Or select a token below</p>
 
                     <div className="row">
-                      <div className="col-md-6">
+                      <div className="col-md-8 offset-md-2">
                           <div className="wallet-card">
-                          <h3>📈 Winners (24hrs)</h3>
                               <ul className="token-list market-data wider-col-1">
                               <li className="header-row">
                               <div>Token</div>
@@ -210,7 +209,7 @@ function TokenViewer() {
                               {error && <div className="text-red-500">{error}</div>}      
                               {/* Assuming globalDataCache.tokensData is an array */}
                               
-                              {globalDataCache.tokenMovers && globalDataCache.tokenMovers.gainers.slice(0,20).map(token => (
+                              {globalDataCache.marketCap && globalDataCache.marketCap.slice(0,50).map(token => (
                                   <li key={token.token_symbol} onClick={() => handleTokenClick(token)}>
                                   <TokenLogo tokenImage={token.token_logo} tokenName={token.token_name}/>
                                   <div>
@@ -228,38 +227,7 @@ function TokenViewer() {
                           </div>
                       </div>
 
-                      <div className="col-md-6">
-                          <div className="wallet-card">
-                          <h3>📉 Losers (24hrs)</h3>
-                              <ul className="token-list market-data wider-col-1">
-                              <li className="header-row">
-                              <div>Token</div>
-                              <div></div>
-                              <div>Price</div>
-                              <div>24h %</div>
-                              <div>Market Cap</div>
-                              </li>
-                              {moversLoading && <Skeleton />}
-                              {error && <div className="text-red-500">{error}</div>}      
-                              {/* Assuming globalDataCache.tokensData is an array */}
-                              
-                              {globalDataCache.tokenMovers && globalDataCache.tokenMovers.losers.slice(0,20).map(token => (
-                                  <li key={token.token_symbol} onClick={() => handleTokenClick(token)}>
-                                  <TokenLogo tokenImage={token.token_logo} tokenName={token.token_name}/>
-                                  <div>
-                                      <div className="token-name">{token.token_name}</div>
-                                      <div className="token-symbol">{token.token_symbol}</div>
-                                  </div>
-                                  <div className="token-price">{token.price_usd && `${Number(Number(token.price_usd).toFixed(2)).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}`}</div>
-                                  <div className={token.price_24h_percent_change < 0 ? "negative" : "positive"}>{Number(token.price_24h_percent_change).toFixed(2)}%</div>
-                                  <div className="">{Number(token.market_cap_usd).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
-                                  
-                                  </li>
-                              ))}
-
-                          </ul>
-                          </div>
-                      </div>
+      
                   </div>
                   
                   </>

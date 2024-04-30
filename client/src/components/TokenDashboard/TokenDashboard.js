@@ -28,6 +28,7 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
   const goBack = () => {
     setGlobalDataCache(prevData => ({
         ...prevData,
+        initialTokenLoaded:false,
         token:null
     }));
     navigate(-1); 
@@ -63,7 +64,7 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
         // hasData = false;
         setGlobalDataCache(prevData => ({
             ...prevData,
-            initialTokenLoad:true,
+            initialTokenLoaded:true,
             token:data
         }));
         fetchChartPrices(address);
@@ -118,6 +119,7 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
             ...prevData,
             token: {
                 ...prevData.token,
+                tokenTransfers:data.tokenTransfers,
                 tokenOwners: data.tokenOwners,
                 topTokenOwners: data.topTokenOwners,
                 totalBalance:data.totalBalance,
@@ -150,11 +152,11 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
 
     // Runs on unmount
     return () => {
-        setGlobalDataCache(prevData => ({
-          ...prevData,
-          initialTokenLoad:false,
-          token: null
-        }));
+        // setGlobalDataCache(prevData => ({
+        //   ...prevData,
+        //   initialTokenLoad:false,
+        //   token: null
+        // }));
       };
     }, []);
 
@@ -168,41 +170,125 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
             <button className="btn btn-sm btn-outline portfolio-back" onClick={goBack}><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" fill="#edf2f4"><path d="M 10 4.9296875 L 2.9296875 12 L 10 19.070312 L 11.5 17.570312 L 6.9296875 13 L 21 13 L 21 11 L 6.9296875 11 L 11.5 6.4296875 L 10 4.9296875 z" fill="#edf2f4"/></svg> Back</button>
         )}
       <div className="token-page page">
-        {globalDataCache.initialTokenLoad && (
+        {globalDataCache.initialTokenLoaded && (
 
         
             <div class="token-page-content">
-                <div class="token-top">
-                    <div class="image">
-                        <div>
-                            <img src={globalDataCache.token.tokenMetadata.logo} alt={`${globalDataCache.token.tokenMetadata.name} token`} />
-                        </div>
-                    </div>
-                    <div class="meta">
-                        <div class="title">{globalDataCache.token.tokenMetadata.name} 
 
-                        {globalDataCache.token.tokenMetadata.verified_contract &&
-                            <>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20"><polygon fill="#42a5f5" points="29.62,3 33.053,8.308 39.367,8.624 39.686,14.937 44.997,18.367 42.116,23.995 45,29.62 39.692,33.053 39.376,39.367 33.063,39.686 29.633,44.997 24.005,42.116 18.38,45 14.947,39.692 8.633,39.376 8.314,33.063 3.003,29.633 5.884,24.005 3,18.38 8.308,14.947 8.624,8.633 14.937,8.314 18.367,3.003 23.995,5.884"/><polygon fill="#fff" points="21.396,31.255 14.899,24.76 17.021,22.639 21.428,27.046 30.996,17.772 33.084,19.926"/></svg>
-                            </>
-                        }
+                <div className="row">
+                    <div className="col-lg-4">
+                            <div class="token-top">
+                            <div class="image">
+                                <div>
+                                    <img src={globalDataCache.token.tokenMetadata.logo} alt={`${globalDataCache.token.tokenMetadata.name} token`} />
+                                </div>
+                            </div>
+                            <div class="meta">
+                                <div class="title">{globalDataCache.token.tokenMetadata.name} 
+
+                                {globalDataCache.token.tokenMetadata.verified_contract &&
+                                    <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20"><polygon fill="#42a5f5" points="29.62,3 33.053,8.308 39.367,8.624 39.686,14.937 44.997,18.367 42.116,23.995 45,29.62 39.692,33.053 39.376,39.367 33.063,39.686 29.633,44.997 24.005,42.116 18.38,45 14.947,39.692 8.633,39.376 8.314,33.063 3.003,29.633 5.884,24.005 3,18.38 8.308,14.947 8.624,8.633 14.937,8.314 18.367,3.003 23.995,5.884"/><polygon fill="#fff" points="21.396,31.255 14.899,24.76 17.021,22.639 21.428,27.046 30.996,17.772 33.084,19.926"/></svg>
+                                    </>
+                                }
+                                
+                                </div>
+                                <div className="symbol">{globalDataCache.token.tokenMetadata.symbol}
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div className="token-price">${utilities.formatPriceNumber(globalDataCache.token.tokenPrice.usdPrice)} <span className={globalDataCache.token.tokenPrice["24hrPercentChange"] && globalDataCache.token.tokenPrice["24hrPercentChange"] < 0 ? "negative" : "positive"}>{Number(globalDataCache.token.tokenPrice["24hrPercentChange"]).toFixed(2)}%</span></div>
+                        <div className="exchange-price">updated a few seconds ago at {globalDataCache.token.tokenPrice.exchangeName}</div>
+                    </div>
+
+                    <div className="col-lg-8">
+                        <div className="row">
+                        {globalDataCache.token.tokenMetadata.categories && (
+                            <div className="col-lg-7">
+                                <h5>Token Categories</h5>
+                                <ul className="token-categories">
+                                    {globalDataCache.token.tokenMetadata.categories.map(item => (
+                                        <li>{item}</li>
+                                    ))}
+                                    {globalDataCache.token.tokenMetadata.categories.length === 0  && (
+                                        <li>No categories</li>
+                                    )}
+                                </ul>
+                            </div>
+                        )}
+
+                        <div className="col-lg-5">
+                            <h5>Token Links</h5>
+                            <ul className="token-links">
+                                <li>
+                                    <Link to={`https://moralismoney.com/chain/ethereum/token/price/${globalDataCache.token.tokenAddress}`} target="_blank" className="link">
+                                        <img src="/images/icon.png" alt="moralis money" /> Moralis Money <ExternalLinkIcon width="14" />
+                                    </Link>
+                                </li>
+
+                                <li>
+                                    <Link to={`https://etherscan.io/token/${globalDataCache.token.tokenAddress}`} target="_blank" className="link">
+                                        <img className="etherscan" src="/images/etherscan.svg" alt="etherscan" /> Etherscan <ExternalLinkIcon width="14" />
+                                    </Link>
+                                </li>
+
+                                
+                                {globalDataCache.token.tokenMetadata.links && (
+                                    <>
+                                        {globalDataCache.token.tokenMetadata.links.website && (
+                                            <li>
+                                            <Link to={globalDataCache.token.tokenMetadata.links.website} target="_blank" className="link">
+                                                Official Website <ExternalLinkIcon width="14" />
+                                            </Link>
+                                        </li>
+                                        )}
+
+                                        {globalDataCache.token.tokenMetadata.links.twitter && (
+                                            <li>
+                                            <Link to={globalDataCache.token.tokenMetadata.links.twitter} target="_blank" className="link">
+                                                Twitter <ExternalLinkIcon width="14" />
+                                            </Link>
+                                        </li>
+                                        )}
+
+                                        {globalDataCache.token.tokenMetadata.links.discord && (
+                                            <li>
+                                            <Link to={globalDataCache.token.tokenMetadata.links.discord} target="_blank" className="link">
+                                                Discord <ExternalLinkIcon width="14" />
+                                            </Link>
+                                        </li>
+                                        )}
+
+                                        {globalDataCache.token.tokenMetadata.links.reddit && (
+                                            <li>
+                                            <Link to={globalDataCache.token.tokenMetadata.links.reddit} target="_blank" className="link">
+                                                Reddit <ExternalLinkIcon width="14" />
+                                            </Link>
+                                        </li>
+                                        )}
+
+                                        {globalDataCache.token.tokenMetadata.links.telegram && (
+                                            <li>
+                                            <Link to={globalDataCache.token.tokenMetadata.links.telegram} target="_blank" className="link">
+                                                Telegram <ExternalLinkIcon width="14" />
+                                            </Link>
+                                        </li>
+                                        )}
+                                    </>
+                                )}
+                                
+                            </ul>
+                        </div>
+
+                        </div>
                         
-                        </div>
-                        <div className="symbol">{globalDataCache.token.tokenMetadata.symbol}</div>
-                    </div>
 
-                    <div className="token-links">
-                        <div>
-                            <Link to={`https://etherscan.io/token/${globalDataCache.token.tokenAddress}`} target="_blank" className="link">
-                                <img className="etherscan" src="/images/etherscan.svg" alt="etherscan" />{utilities.shortAddress(globalDataCache.token.tokenAddress)} <ExternalLinkIcon width={16}/>
-                            </Link>
-                        </div>
+                            
+                        
                     </div>
                 </div>
-
-
-                <div className="token-price">${utilities.formatPriceNumber(globalDataCache.token.tokenPrice.usdPrice)} <span className={globalDataCache.token.tokenPrice["24hrPercentChange"] && globalDataCache.token.tokenPrice["24hrPercentChange"] < 0 ? "negative" : "positive"}>{Number(globalDataCache.token.tokenPrice["24hrPercentChange"]).toFixed(2)}%</span></div>
-                <div className="exchange-price">updated a few seconds ago at {globalDataCache.token.tokenPrice.exchangeName}</div>
             
 
 
@@ -257,6 +343,7 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
                         </li>
                         
                     </ul>
+                    
                 </div>
 
                 <div className="col-lg-8">
@@ -507,7 +594,51 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
                             
                         </TabPane>
                         <TabPane tabId="3">
-                            <h2>Coming soon</h2>
+                            <h2>Activity</h2>
+                            <ul>
+                            {globalDataCache.token.tokenTransfers && globalDataCache.token.tokenTransfers.map(item => (
+                                <li className="transfer-item">
+                                
+                                        <div className={`category transfer`}>
+                                            <div className={`transfers`}>Transfer</div>
+                                        </div>
+                                        
+                                        <div className="label">
+                                            <div className="group">
+                                                <div className="heading">Amount</div>
+                                                <div className="value">{utilities.formatPriceNumber(Number(item.value_decimal).toFixed(2))}</div>
+                                            </div>
+
+                                            <div className="group">
+                                                <div className="heading">USD Value</div>
+                                                <div className="value">${utilities.formatPriceNumber(Number(Number(item.value_decimal)*globalDataCache.token.tokenPrice.usdPrice).toFixed(2))}</div>
+                                            </div>
+
+                                            <div className="group">
+                                                <div className="heading">From</div>
+                                                <div className="value">{item.from_address_label ? item.from_address_label : utilities.shortAddress(item.from_address)}</div>
+                                            </div>
+
+                                            <div className="group">
+                                                <div className="heading">To</div>
+                                                <div className="value">{item.to_address_label ? item.to_address_label : utilities.shortAddress(item.to_address)}</div>
+                                            </div>
+
+                                            <div className="group">
+                                                <div className="heading">Transaction</div>
+                                                <div className="value copy-container">{utilities.shortAddress(item.transaction_hash)}
+                                                    <CopyToClipboard valueToCopy={item.transaction_hash}>
+                                                        <button></button>
+                                                    </CopyToClipboard>
+                                                </div>
+                                            </div>
+                                            
+                                        </div>
+                                        <div className="timestamp">{moment(item.block_timestamp).fromNow()}</div>
+                                    
+                                </li>
+                            ))}
+                            </ul>
                         </TabPane>
                         <TabPane tabId="4">
                             <h2>Coming soon</h2>

@@ -62,32 +62,34 @@ function WalletViewer() {
         const data = await response.json();
         hasData = false;
         
-        setGlobalDataCache({
-          selectedChain: localStorage.getItem('selectedChain') || 'eth',
-          walletAddress: data.address,
-          balance:data.balance ? data.balance.balance : 0,
-          chains: data.active_chains,
-          nativeNetworth: data.nativeNetworth,
-          networth: data.networth,
-          networthArray: {
-            labels: data.networthDataLabels,
-            data:data.networthDatasets
-          },
-          profile: {
-            walletAge: data.walletAge,
-            firstSeenDate: data.firstSeenDate, 
-            lastSeenDate: data.lastSeenDate,
-            isWhale: data.isWhale, 
-            earlyAdopter: data.earlyAdopter,
-            multiChainer: data.multiChainer,
-            speculator: data.speculator, 
-            isFresh: data.isFresh,
-            ens: data.ens,
-            unstoppable: data.unstoppable
-          },
-          days: "7"
-        });
-        
+
+        setGlobalDataCache(prevData => ({
+            ...prevData,
+            selectedChain: localStorage.getItem('selectedChain') || 'eth',
+            walletAddress: data.address,
+            balance:data.balance ? data.balance.balance : 0,
+            chains: data.active_chains,
+            nativeNetworth: data.nativeNetworth,
+            networth: data.networth,
+            networthArray: {
+              labels: data.networthDataLabels,
+              data:data.networthDatasets
+            },
+            profile: {
+              walletAge: data.walletAge,
+              firstSeenDate: data.firstSeenDate, 
+              lastSeenDate: data.lastSeenDate,
+              isWhale: data.isWhale, 
+              earlyAdopter: data.earlyAdopter,
+              multiChainer: data.multiChainer,
+              speculator: data.speculator, 
+              isFresh: data.isFresh,
+              ens: data.ens,
+              unstoppable: data.unstoppable
+            },
+            days: "7"
+        }));
+
       } else {
         setError(`Please provide a valid address.`);
       }
@@ -120,7 +122,7 @@ function WalletViewer() {
               className="container text-center"
               style={{ padding: '100px 0' }}
             >
-              <h1>🔍 <br/>Add Wallet</h1>
+              <h1>🔍 <br/>View Wallet</h1>
               <div id="wallet-container">
                 {loading ? (
                   <>

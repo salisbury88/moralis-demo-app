@@ -7,16 +7,32 @@ const NavBar = () => {
   const { globalDataCache, setGlobalDataCache } = useData();
   const navigate = useNavigate();
   const clearWallet = () => {
-    setGlobalDataCache({
-      selectedChain: localStorage.getItem('selectedChain') || 'eth',
-    });
+    setGlobalDataCache(prevData => ({
+      ...prevData,
+      balance: null,
+      chains: null,
+      chartArray: null,
+      days: null,
+      interactions:null,
+      nativeNetworth: null,
+      networth: null,
+      networthArray: null,
+      profile: null,
+      selectedChain: "eth",
+      stats: null,
+      tokenCount: null,
+      token_balances: null,
+      walletAddress: null
+    }));
     navigate(`/wallets/`);
   }
 
   const clearToken = () => {
-    setGlobalDataCache({
-      selectedChain: localStorage.getItem('selectedChain') || 'eth',
-    });
+    setGlobalDataCache(prevData => ({
+        ...prevData,
+        token:null,
+        initialTokenLoaded: false
+    }));
     navigate(`/tokens/`);
   }
 
@@ -103,7 +119,7 @@ const NavBar = () => {
 
                 <li className="nav-item">
                   <NavLink 
-                    className="mr-4" 
+                    className="mr-4" onClick={clearToken}
                     to={`/tokens`}
                   >
                     Home

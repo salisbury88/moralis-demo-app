@@ -512,6 +512,7 @@ button.spam {
     background: $bg-card;
     padding: 20px 0;
     border-bottom: 1px solid #242737;
+    min-height: 84px;
 
     li.nav-item {
         margin: 0 5px;
@@ -1549,30 +1550,6 @@ ul.table-list li {
     h5 {
         font-weight:700;
     }
-
-    .token-links {
-        margin-left: auto;
-
-        a.link {
-            border: 1px solid #172844;
-            padding: 10px 15px;
-            border-radius: 7px;
-            background: #04142c;
-            display: flex;
-            align-items: center;
-            color:white;
-            text-decoration: none;
-
-            img {
-                width:20px;
-                margin-right:5px;
-            }
-
-            svg {
-                margin-left:5px;
-            }
-        }
-    }
     .token-price {
         font-weight: 600;
         font-size: 2.4rem;
@@ -1805,6 +1782,33 @@ table.table {
     }
 }
 
+ul.token-categories, ul.token-links {
+    display: flex;
+    flex-wrap: wrap;
+
+    li {
+        font-size: 0.8rem;
+        background: #03142c;
+        border: 1px solid #172844;
+        padding: 3px 10px;
+        border-radius: 5px;
+        margin: 4px;
+        color:white;
+
+        a {
+            color:white;
+            text-decoration: none;
+        }
+        img {
+            width:15px;
+            margin-right:2px;
+        }
+
+        svg {
+            margin-left:2px;
+        }
+    }
+}
 
 button.btn.portfolio-back {
     padding: 7px 10px;
@@ -1817,6 +1821,12 @@ button.btn.portfolio-back {
 
 .token-modal-content, .token-page-content {
 
+    .transfer-item {
+        .label {
+            width:75%;
+        }
+        
+    }
     h2 {
         display: flex;
         align-items: center;
