@@ -1,7 +1,7 @@
 import express from 'express';
 import fetch from 'node-fetch';
 const API_KEY = process.env.API_KEY;
-const baseURL = process.env.BASE_URL;
+const baseURL = "https://deep-index.moralis.io/api/v2.2";
 const router = express.Router();
 
 router.post('/api/wallet/tokens/spam', async function(req,res,next) {
