@@ -100,8 +100,17 @@ const NavBar = () => {
           <nav className="nav-bar navbar fixed-top">
               <div className="container">
                 <ul className="nav">
+
+                <li className="nav-item">
+                  <NavLink 
+                    className="mr-4" 
+                    to={`/tokens`}
+                  >
+                    Home
+                  </NavLink>
+                </li>
                   <li>
-                    <b>{globalDataCache.token.tokenMetadata.name} ({globalDataCache.token.tokenMetadata.symbol}) - {globalDataCache.token.tokenMetadata.address}</b>
+                    {globalDataCache.token.tokenMetadata.name} ({globalDataCache.token.tokenMetadata.symbol}) - {globalDataCache.token.tokenMetadata.address}
                   </li>
     
                 </ul>

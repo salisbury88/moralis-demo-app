@@ -63,6 +63,7 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
         // hasData = false;
         setGlobalDataCache(prevData => ({
             ...prevData,
+            initialTokenLoad:true,
             token:data
         }));
         fetchChartPrices(address);
@@ -117,6 +118,7 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
             ...prevData,
             token: {
                 ...prevData.token,
+                tokenOwners: data.tokenOwners,
                 topTokenOwners: data.topTokenOwners,
                 totalBalance:data.totalBalance,
                 totalUsd:data.totalUsd,
@@ -150,6 +152,7 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
     return () => {
         setGlobalDataCache(prevData => ({
           ...prevData,
+          initialTokenLoad:false,
           token: null
         }));
       };
@@ -165,7 +168,7 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
             <button className="btn btn-sm btn-outline portfolio-back" onClick={goBack}><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" fill="#edf2f4"><path d="M 10 4.9296875 L 2.9296875 12 L 10 19.070312 L 11.5 17.570312 L 6.9296875 13 L 21 13 L 21 11 L 6.9296875 11 L 11.5 6.4296875 L 10 4.9296875 z" fill="#edf2f4"/></svg> Back</button>
         )}
       <div className="token-page page">
-        {globalDataCache.token && (
+        {globalDataCache.initialTokenLoad && (
 
         
             <div class="token-page-content">
@@ -226,10 +229,6 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
                         <li>
                             <div className="left">Current Price</div>
                             <div className="right">${globalDataCache.token.tokenPrice.usdPrice}</div>
-                        </li>
-                        <li>
-                            <div className="left">Top 10 Holders</div>
-                            <div className="right">{globalDataCache.token.topTenPercentageHeld}%</div>
                         </li>
                         <li>
                             <div className="left">Token Address</div>
@@ -350,6 +349,7 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
                                 </tr>
                             </thead>
                             <tbody>
+                            {!globalDataCache.token.tokenOwners && <Loader />}   
                             {globalDataCache.token.tokenOwners && globalDataCache.token.tokenOwners.map((owner, index) => (
                                 <tr>
                                     <th scope="row">

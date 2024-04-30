@@ -26,13 +26,13 @@ router.post('/api/token', async function(req,res,next) {
 
         let tokenMetadata = await get_metadata.json();
 
-        const ownersPromise = fetch(`https://deep-index.moralis.io/api/v2.2/erc20/${tokenAddress}/owners`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-API-Key': API_KEY
-                }
-            });
+        // const ownersPromise = fetch(`https://deep-index.moralis.io/api/v2.2/erc20/${tokenAddress}/owners`, {
+        //         method: 'GET',
+        //         headers: {
+        //             'Accept': 'application/json',
+        //             'X-API-Key': API_KEY
+        //         }
+        //     });
 
         const pricePromise = fetch(`https://deep-index.moralis.io/api/v2.2/erc20/${tokenAddress}/price?include=percent_change`, {
             method: 'GET',
@@ -50,13 +50,9 @@ router.post('/api/token', async function(req,res,next) {
             }
         });
 
-        const [ownersResponse, priceResponse, blockResponse] = await Promise.all([ownersPromise, pricePromise, blockPromise]);
+        const [priceResponse, blockResponse] = await Promise.all([pricePromise, blockPromise]);
 
-        if (!ownersResponse.ok) {
-            const message = await ownersResponse.json();
-            console.log(ownersResponse.statusText);
-            return res.status(500).json(message);
-        }
+      
 
         if (!blockResponse.ok) {
             const message = await blockResponse.json();
@@ -65,13 +61,13 @@ router.post('/api/token', async function(req,res,next) {
         }
 
 
-        const tokenOwners = await ownersResponse.json();
+        // const tokenOwners = await ownersResponse.json();
         const tokenPrice = await priceResponse.json();
         const blockCreated = await blockResponse.json();
 
-        const totalPercentageHeld = tokenOwners.result.slice(0, 10).reduce((acc, curr) => {
-            return acc + (curr.percentage_relative_to_total_supply || 0); // Add || 0 to handle any undefined or null values gracefully
-        }, 0);
+        // const totalPercentageHeld = tokenOwners.result.slice(0, 10).reduce((acc, curr) => {
+        //     return acc + (curr.percentage_relative_to_total_supply || 0); // Add || 0 to handle any undefined or null values gracefully
+        // }, 0);
 
         if(tokenMetadata[0].total_supply_formatted) {
             if(tokenPrice.usdPrice) {
@@ -91,8 +87,8 @@ router.post('/api/token', async function(req,res,next) {
         return res.status(200).json({
             tokenAddress,
             tokenMetadata:tokenMetadata[0],
-            tokenOwners:tokenOwners.result,
-            topTenPercentageHeld: totalPercentageHeld,
+            // tokenOwners:tokenOwners.result,
+            // topTenPercentageHeld: totalPercentageHeld,
             tokenPrice,
             blockCreated
         });
@@ -106,7 +102,7 @@ router.get('/api/token/:tokenAddress', async function(req,res,next) {
     try {
         let tokenAddress = req.params.tokenAddress;
 
-        const ownersPromise = fetch(`https://deep-index.moralis.io/api/v2.2/erc20/${tokenAddress}/owners?limit=10`, {
+        const ownersPromise = fetch(`https://deep-index.moralis.io/api/v2.2/erc20/${tokenAddress}/owners?limit=50`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
@@ -156,6 +152,7 @@ router.get('/api/token/:tokenAddress', async function(req,res,next) {
         });
 
         return res.status(200).json({
+            tokenOwners: tokenOwners.result,
             topTokenOwners: results,
             totalBalance,totalUsd,totalPercentage, commonTokens
         });
