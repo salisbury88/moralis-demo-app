@@ -7,16 +7,15 @@
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
-      content="An EVM wallet viewer powered entirely by Moralis Web3 APIs. Learn more at https://moralis.io/."
-    />
+      content="A set of web3 demo applications built entirely with Moralis Web3 APIs. Learn more at https://moralis.io/."/>
 
-    <meta name="twitter:title" content="EVM Wallet Viewer - Powered by Moralis">
-    <meta name="twitter:description" content="An EVM wallet viewer powered entirely by Moralis Web3 APIs. Learn more at https://moralis.io/.">
+    <meta name="twitter:title" content="Moralis Web3 Demo Apps - Powered by Moralis APIs">
+    <meta name="twitter:description" content="A set of web3 demo applications built entirely with Moralis Web3 APIs. Learn more at https://moralis.io/.">
     <meta name="twitter:image:src" content="https://moralis-portfolio-staging-f5f5e6cfeae8.herokuapp.com/images/default.png">
 
     <meta property="og:image" content="https://moralis-portfolio-staging-f5f5e6cfeae8.herokuapp.com/images/default.png" />
-    <meta property='og:title' content="EVM Wallet Viewer - Powered by Moralis"/>
-    <meta property='og:description' content="An EVM wallet viewer powered entirely by Moralis Web3 APIs. Learn more at https://moralis.io/."/>
+    <meta property='og:title' content="Moralis Web3 Demo Apps - Powered by Moralis APIs"/>
+    <meta property='og:description' content="A set of web3 demo applications built entirely with Moralis Web3 APIs. Learn more at https://moralis.io/."/>
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/favicon.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
@@ -35,7 +34,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <title>Moralis Web3 Demo - Powered by Moralis APIs</title>
+    <title>Moralis Web3 Demo Apps - Powered by Moralis APIs</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
@@ -50,58 +49,5 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
-
-    <!-- <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-      var socket = io();
-    </script> -->
-
-
-    <!-- <script type="module">
-      import { io } from "https://cdn.socket.io/4.7.4/socket.io.esm.min.js";
-    
-    const socket = io("ws://6.tcp.ngrok.io:15596", {
-      reconnectionDelayMax: 10000,
-      reconnect: true
-    });
-    socket.on("connect", () => {
-      socket.on('message', (payload) => {
-        console.log('message', payload.action, payload.response);
-      });
-    
-      socket.send({
-        action: 'getNativeBalance',
-        request: {
-          address: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',
-          chain: '0x1'
-        }
-      })
-    
-      socket.send({
-        action: 'getWalletNetWorth',
-        request: {
-          address: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',
-          chains: ['0x1']
-        }
-      })
-    
-      socket.send({
-        action: 'getWalletTokenBalances',
-        request: {
-          address: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',
-          chain: '0x1'
-        }
-      })
-    
-      socket.send({
-        action: 'getTokenPrice',
-        request: {
-          address: '0xB8c77482e45F1F44dE1745F52C74426C631bDD52',
-          chain: '0x1'
-        }
-      })
-    });
-    
-    </script> -->
   </body>
 </html>
