@@ -2,7 +2,7 @@
     <a align="center" href="https://moralis.io" target="_blank">
       <img src="https://github.com/MoralisWeb3/Moralis-JS-SDK/raw/main/assets/moralis-logo.svg" alt="Moralis JS SDK" height=200/>
     </a>
-    <h1 align="center">Moralis Demo Project Documentation</h1>
+    <h1 align="center">Moralis Demo Project</h1>
   <br/>
 </div>
 
@@ -22,7 +22,7 @@ To start a local development server on `3001`, run the following command in the 
 node app.js
 ```
 
-Then, switch to the client:
+Then, in a new terminal, switch to the client:
 ```sh
 cd client
 ```
