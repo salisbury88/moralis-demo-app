@@ -1,7 +1,7 @@
 import moment from 'moment';
 import fetch from 'node-fetch';
-const API_KEY = "HsPkTtNaTcNOj8TWnAG2ZvcjOIzW82gUZMATjQ4tOcHa30wES5GkHgbWAq5pG3Fu";
-const baseURL = "https://deep-index.moralis.io/api/v2.2";
+const API_KEY = process.env.API_KEY;
+const baseURL = process.env.BASE_URL;
 
 export const networkData = [
   {
@@ -86,7 +86,7 @@ export const calcAge = (dob) => {
     const ageInDays = Math.floor(age.asDays())
   
     if (age < 0)
-      throw 'DOB is in the future!'
+      throw 'Age is in the future!'
   
     let pluralYears = pluralize('year', ageInYears)
     let pluralDays = pluralize('day', age.days())
@@ -525,6 +525,34 @@ export function formatNumber(numberOrString) {
   } else {
     return 'Invalid input';
   }
+}
+
+function formatPriceNumber(num) {
+  // First, handle the large number formatting with commas
+  const parts = num.toString().split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  if (parts.length === 2) {
+      // If there's a decimal part, format it according to the rule
+      let decimalPart = parts[1];
+      const nonZeroMatch = decimalPart.match(/[^0]/); // Find first non-zero digit in decimal
+      if (nonZeroMatch) {
+          const firstNonZeroIndex = nonZeroMatch.index;
+          // Calculate total length: digits before first non-zero + 4 or remaining length
+          let totalLength = Math.min(firstNonZeroIndex + 5, decimalPart.length);
+          // For numbers greater than 1, we limit to 2 decimal places if they exist
+          if (parseInt(parts[0].replace(/,/g, ''), 10) >= 1) {
+              totalLength = Math.min(2, decimalPart.length);
+          }
+          decimalPart = decimalPart.substring(0, totalLength);
+          // Remove trailing zeros
+          decimalPart = decimalPart.replace(/0+$/, '');
+      }
+      return decimalPart ? `${parts[0]}.${decimalPart}` : parts[0];
+  }
+
+  // Return formatted integer part if no decimal part
+  return parts[0];
 }
 
 export function extractMetadataInfo(metadata) {

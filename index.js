@@ -5,10 +5,9 @@ import apiIndex from './api/index.js';
 import tokenApi from './api/tokens.js';
 import nftApi from './api/nfts.js';
 import historyApi from './api/history.js';
+import spamApi from './api/spamCheck.js';
 import path from 'path';
 const __dirname = path.resolve();
-
-
 
 const app = express();
 app.use(express.json());
@@ -16,27 +15,6 @@ app.use(cors());
 
 import http from 'http';
 const server = http.createServer(app);
-import { Server } from "socket.io";
-
-// const io = new Server(server, {
-//   cors: {origin:"http://localhost:3000", methods: ["GET", "POST"]},
-// });
-
-// io.on("connection", (socket) => {
-//   console.log(`A user connected ${socket.id}`);
-
-//   socket.on('message', (payload) => {
-//     console.log(payload);
-//   })
-
-//   socket.send({
-//     action: 'getNativeBalance',
-//     request: {
-//       address: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',
-//       chain: '0x1'
-//     }
-//   })
-// });
 
 app.use(express.static(path.resolve(__dirname, './client/build')));
 app.use(validateChain);
@@ -45,18 +23,19 @@ app.use('/', apiIndex);
 app.use('/', tokenApi);
 app.use('/', nftApi);
 app.use('/', historyApi);
+app.use('/', spamApi);
 const chains = ['eth', 'polygon', 'bsc', 'base', 'gnosis', 'optimism', 'fantom', 'avalanche', 'arbitrum', 'cronos', 'palm'];
 function validateChain(req, res, next) {
   const requestedChain = req.query.chain;
 
   // Check if req.query.chain exists
   if (requestedChain) {
-    // Check if the requested chain is in the allowed list
+    // Check if the requested chain is in the supported list
     if (chains.includes(requestedChain)) {
-      // If allowed, set req.chain to req.query.chain
+      // If supported, set req.chain to req.query.chain
       req.chain = requestedChain;
     } else {
-      // If not allowed, default to req.chain = "eth"
+      // If not supported, default to req.chain = "eth"
       req.chain = 'eth';
     }
   } else {
@@ -67,8 +46,6 @@ function validateChain(req, res, next) {
   // Continue to the next middleware or route handler
   next();
 }
-
-
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

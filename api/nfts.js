@@ -2,12 +2,9 @@ import express from 'express';
 import fetch from 'node-fetch';
 import moment from 'moment';
 import { ethers } from 'ethers';
-import * as utilities from './utilities.js';
-
+const API_KEY = process.env.API_KEY;
+const baseURL = process.env.BASE_URL;
 const router = express.Router();
-const chains = ['eth', 'polygon', 'bsc', 'optimism', 'fantom', 'avalanche', 'arbitrum', 'cronos', 'palm'];
-const API_KEY = "HsPkTtNaTcNOj8TWnAG2ZvcjOIzW82gUZMATjQ4tOcHa30wES5GkHgbWAq5pG3Fu";
-const baseURL = "https://deep-index.moralis.io/api/v2.2";
 
 router.get('/api/wallet/nfts', async function(req,res,next) {
     try {
@@ -17,7 +14,12 @@ router.get('/api/wallet/nfts', async function(req,res,next) {
         let cursor = null;
         let page = 0;
         do {
-            const response = await fetch(`${baseURL}/${address}/nft?chain=${chain}&exclude_spam=true&normalizeMetadata=true&media_items=true&include_prices=true&cursor=${cursor}`, {
+            let chainURL = `${baseURL}/${address}/nft?chain=${chain}&exclude_spam=true&normalizeMetadata=true&media_items=true&include_prices=true&cursor=${cursor}`;
+            if(chain !== 'eth') {
+                //Only eth is supported right now
+                chainURL = `${baseURL}/${address}/nft?chain=${chain}&exclude_spam=true&normalizeMetadata=true&media_items=true&cursor=${cursor}`
+            }
+            const response = await fetch(chainURL, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
@@ -42,7 +44,7 @@ router.get('/api/wallet/nfts', async function(req,res,next) {
             cursor = data.cursor;
 
             page = data.page;
-            if(page > 12) {
+            if(page > 5) {
                 break;
             }
         } while (cursor != "" && cursor != null);
@@ -55,63 +57,81 @@ router.get('/api/wallet/nfts', async function(req,res,next) {
     }
 });
 
-
-router.get('/api/wallet/nfts/spam', async function(req,res,next) {
+router.get('/api/nfts/:address', async function(req,res,next) {
     try {
-        const address = req.query.wallet;
+        const address = req.params.address;
         const chain = req.query.chain ? req.query.chain : 'eth';
-        let nfts = [];
-        let cursor = null;
-        let page = 0;
-        let totalCount = 0;
-        let spamCount = 0;
-        let notSpamCount = 0;
-        let verifiedCount = 0;
-        do {
-            const response = await fetch(`${baseURL}/${address}/nft/collections?chain=${chain}&cursor=${cursor}`, {
+
+        const metadataPromise = fetch(`${baseURL}/nft/${address}/metadata?chain=${chain}`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
-                    'X-API-Key': `${API_KEY}`
+                    'X-API-Key': API_KEY
                 }
             });
-    
-            if (!response.ok) {
-                console.log(response.statusText)
-                const message = await response.json();
+
+        const nftsPromise = fetch(`${baseURL}/nft/${address}?chain=${chain}&normalizeMetadata=true&media_items=true`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-API-Key': API_KEY
             }
-    
-            const data = await response.json();
-            
-            console.log(`Got page ${data.page}`);
-            if(data.result && data.result.length > 0) {
-                for(const nft of data.result) {
-                    totalCount += 1;
-                    if(nft.possible_spam) {
-                        spamCount += 1;
-                        console.log(`${nft.token_address} spam`)
-                    } else {
-                        notSpamCount += 1;
-                        console.log(`${nft.token_address} not spam`)
-                    }
+        });
 
-                    if(nft.verified_collection) {
-                        verifiedCount += 1;
-                    }
-                }
+        const transfersPromise = fetch(`${baseURL}/nft/${address}/transfers?chain=${chain}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-API-Key': API_KEY
             }
-            
-            cursor = data.cursor;
+        });
 
-            page = data.page;
-        } while (cursor != "" && cursor != null);
+        const ownersPromise = fetch(`${baseURL}/nft/${address}/owners?chain=${chain}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-API-Key': API_KEY
+            }
+        });
+
+        const [metadataResponse, nftsResponse, transfersResponse, ownersResponse] = await Promise.all([metadataPromise, nftsPromise, transfersPromise, ownersPromise]);
+
+        if (!metadataResponse.ok) {
+            const message = await metadataResponse.json();
+            console.log(metadataResponse.statusText);
+            return res.status(500).json(message);
+        }
+
+        if (!nftsResponse.ok) {
+            const message = await nftsResponse.json();
+            console.log(nftsResponse.statusText);
+            return res.status(500).json(message);
+        }
+
+        if (!transfersResponse.ok) {
+            const message = await transfersPromise.json();
+            console.log(transfersPromise.statusText);
+            return res.status(500).json(message);
+        }
+
+        if (!ownersResponse.ok) {
+            const message = await ownersPromise.json();
+            console.log(ownersPromise.statusText);
+            return res.status(500).json(message);
+        }
 
 
-        console.log(`Total NFT Collections: ${totalCount}`);
-        console.log(`Spam NFT Collections: ${spamCount}`);
-        console.log(`Non-spam NFT Collections: ${notSpamCount}`);
-        console.log(`Verified NFT Collections: ${verifiedCount}`);
-        return res.status(200).json(200);
+        const collectionMetadata = await metadataResponse.json();
+        const collectionNFTs = await nftsResponse.json();
+        const collectionTransfers = await transfersResponse.json();
+        const collectionOwners = await ownersResponse.json();
+        
+        return res.status(200).json({
+            collectionMetadata:collectionMetadata,
+            collectionNFTs: collectionNFTs.result,
+            collectionTransfers: collectionTransfers.result,
+            collectionOwners: collectionOwners.result
+        });
     } catch(e) {
         next(e);
     }
@@ -171,6 +191,96 @@ router.get('/api/wallet/nfts/:address/:token_id', async function(req,res,next) {
 
 
         return res.status(200).json(nft);
+    } catch(e) {
+        next(e);
+    }
+});
+
+
+router.get('/api/marketplace', async function(req,res,next) {
+    try {
+        
+        const trendingCollections = fetch(`${baseURL}/market-data/nfts/hottest-collections`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-API-Key': API_KEY
+            }
+        });
+
+        const topCollections = fetch(`${baseURL}/market-data/nfts/top-collections`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-API-Key': API_KEY
+            }
+        });
+
+        const [trendingResponse, topResponse] = await Promise.all([trendingCollections, topCollections]);
+
+        if (!trendingResponse.ok) {
+            const message = await trendingResponse.json();
+            console.log(trendingResponse.statusText);
+            return res.status(500).json(message);
+        }
+
+        if (!topResponse.ok) {
+            const message = await topResponse.json();
+            console.log(topResponse.statusText);
+            return res.status(500).json(message);
+        }
+
+
+        const trending = await trendingResponse.json();
+        const top = await topResponse.json();
+        
+        let topFour = [];
+        if(trending && trending.length > 0) {
+            topFour = trending.slice(0, 4);
+        }
+
+        let addresses = [];
+        topFour.forEach(function(collection) {
+            addresses.push(collection.collection_address);
+        });
+
+        const response = await fetch(`${baseURL}/nft/metadata`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-API-Key': `${API_KEY}`,
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({ "addresses": addresses}),
+        });
+
+        if (!response.ok) {
+            console.log(response.statusText)
+            const message = await response.json();
+            return res.status(500).json(message);
+        }
+
+        const featured = await response.json();
+
+        if(featured && featured.length > 0) {
+            featured.forEach(feature => {
+                const trend = topFour.find(t => t.collection_address === feature.token_address);
+                if (trend) {
+                    feature.collection_title = feature.name;
+                    // Merge specific fields from trending into featured
+                    feature.floor_price = trend.floor_price;
+                    feature.floor_price_usd = trend.floor_price_usd;
+                    feature.floor_price_24hr_percent_change = trend.floor_price_24hr_percent_change;
+                    feature.volume_usd = trend.volume_usd;
+                    feature.volume_24hr_percent_change = trend.volume_24hr_percent_change;
+                    feature.average_price_usd = trend.average_price_usd;
+                }
+            });
+        }
+        
+        return res.status(200).json({
+            trending,top, featured
+        });
     } catch(e) {
         next(e);
     }
