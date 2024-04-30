@@ -9,6 +9,7 @@ import classnames from 'classnames';
 const MarketData = () => {
   const { globalDataCache, setGlobalDataCache } = useData();
   const [loading, setLoading] = useState(false);
+  const [moversLoading, setMoversLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const [marketDataLoading, setMarketDataLoading] = useState(false);
@@ -22,6 +23,34 @@ const MarketData = () => {
     const handleTokenClick = (token) => {
         navigate(`/tokens/${token.contract_address}`);
     };
+
+  const fetchFirstTab = (chain) => {
+    setMoversLoading(true);
+    setError(null);
+    setGlobalDataCache(prevData => ({
+      ...prevData,
+      marketCap: null,
+      tradingVolume:null,
+      marketDataLoaded:false
+    }));
+    fetch(`${process.env.REACT_APP_API_URL}/api/market-data/movers`)
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch data');
+        return response.json();
+      })
+      .then(fetchedData => {
+        setGlobalDataCache(prevData => ({
+          ...prevData,
+          tokenMovers: fetchedData.top_movers,
+        }));
+        setMoversLoading(false);
+      })
+      .catch(error => {
+        setError(error.message);
+        setMoversLoading(false);
+      });
+  }
+
 
   const fetchMarketData = (chain) => {
     setLoading(true);
@@ -38,22 +67,16 @@ const MarketData = () => {
         return response.json();
       })
       .then(fetchedData => {
-        // Update globalDataCache with fetchedData
-        
         setGlobalDataCache(prevData => ({
           ...prevData,
           marketCap: fetchedData.market_cap,
           tradingVolume: fetchedData.trading_volume,
           topTokens: fetchedData.top_tokens,
-          tokenMovers: fetchedData.token_movers,
           nftMarketCap: fetchedData.nft_market_cap,
           nftVolume: fetchedData.nft_volume,
           marketDataLoaded:true
         }));
         setLoading(false);
-        if(fetchedData.unsupported) {
-          setError("Unsupported wallet.")
-        }
       })
       .catch(error => {
         setError(error.message);
@@ -65,6 +88,8 @@ const MarketData = () => {
   useEffect(() => {
     if (!globalDataCache.marketDataLoaded) {
       setLoading(true);
+      setMoversLoading(true);
+      fetchFirstTab()
       fetchMarketData();
     }
   }, []);
@@ -92,16 +117,16 @@ const MarketData = () => {
                     className={classnames({ active: activeTab === '1' })}
                     onClick={() => { toggle('1'); }}
                 >
-                    Cryptos by Market Cap
+                    ERC20 Winners & Losers
                 </NavLink>
             </NavItem>
-            
+
             <NavItem>
                 <NavLink
                     className={classnames({ active: activeTab === '2' })}
                     onClick={() => { toggle('2'); }}
                 >
-                    Cryptos by Trade Volume
+                    ERC20s by Market Cap
                 </NavLink>
             </NavItem>
 
@@ -110,16 +135,16 @@ const MarketData = () => {
                     className={classnames({ active: activeTab === '3' })}
                     onClick={() => { toggle('3'); }}
                 >
-                    ERC20s by Market Cap
+                    Cryptos by Market Cap
                 </NavLink>
             </NavItem>
-
+            
             <NavItem>
                 <NavLink
                     className={classnames({ active: activeTab === '4' })}
                     onClick={() => { toggle('4'); }}
                 >
-                    ERC20 Winners & Losers
+                    Cryptos by Trade Volume
                 </NavLink>
             </NavItem>
 
@@ -142,134 +167,8 @@ const MarketData = () => {
             </NavItem>
         </Nav>
         <TabContent activeTab={activeTab}>
-            <TabPane tabId="1">
-            <h3>New 🔥: Top 100 Cryptocurrencies by Market Cap</h3>
-            <ul className="token-list market-data">
-                <li className="header-row">
-                <div>Token</div>
-                <div></div>
-                <div>Price</div>
-                <div>1h %</div>
-                <div>24h %</div>
-                <div>7d %</div>
-                <div>30d %</div>
-                <div>24h High</div>
-                <div>24h Low</div>
-                <div>All Time High</div>
-                <div>Market Cap</div>
-                </li>
-                {loading && <Skeleton />}
-                {error && <div className="text-red-500">{error}</div>}      
-                {/* Assuming globalDataCache.tokensData is an array */}
-                
-                {globalDataCache.marketCap && globalDataCache.marketCap.map(token => (
-                    <li key={token.symbol}>
-                    <TokenLogo tokenImage={token.logo} tokenName={token.name}/>
-                    <div>
-                        <div className="token-name">{token.name}</div>
-                        <div className="token-symbol">{token.symbol}</div>
-                    </div>
-                    <div className="token-price">{token.usd_price && `${Number(Number(token.usd_price).toFixed(2)).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}`}</div>
-                    <div className={token.usd_price_1hr_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_1hr_percent_change).toFixed(2)}%</div>
-                    <div className={token.usd_price_24hr_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_24hr_percent_change).toFixed(2)}%</div>
-                    <div className={token.usd_price_7d_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_7d_percent_change).toFixed(2)}%</div>
-                    <div className={token.usd_price_30d_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_30d_percent_change).toFixed(2)}%</div>
-                    <div className="">{Number(token.usd_price_24hr_high).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
-                    <div className="">{Number(token.usd_price_24hr_low).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
-                    <div className="">
-                        <div>{Number(token.usd_price_ath).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
-                        <div className={token.ath_percent_change < 0 ? "negative" : "positive"}>{Number(token.ath_percent_change).toFixed(2)}%</div>
-                    </div>
-                    <div className="">
-                        <div>{Number(token.market_cap_usd).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
-                        <div className={token.market_cap_24hr_percent_change < 0 ? "negative" : "positive"}>{Number(token.market_cap_24hr_percent_change).toFixed(2)}%</div>
-                    </div>
-                    
-                    </li>
-                ))}
 
-            </ul>
-            </TabPane>
-            <TabPane tabId="2">
-            <h3>New 🔥: Top 100 Cryptocurrencies by Trade Volume</h3>
-            <ul className="token-list market-data">
-                <li className="header-row">
-                <div>Token</div>
-                <div></div>
-                <div>Price</div>
-                <div>1h %</div>
-                <div>24h %</div>
-                <div>7d %</div>
-                <div>30d %</div>
-                <div>24h High</div>
-                <div>24h Low</div>
-                <div>All Time High</div>
-                <div>Trade Volume</div>
-                </li>
-                {loading && <Skeleton />}
-                {error && <div className="text-red-500">{error}</div>}      
-                {/* Assuming globalDataCache.tokensData is an array */}
-                
-                {globalDataCache.tradingVolume && globalDataCache.tradingVolume.map(token => (
-                    <li key={token.symbol}>
-                    <TokenLogo tokenImage={token.logo} tokenName={token.name}/>
-                    <div>
-                        <div className="token-name">{token.name}</div>
-                        <div className="token-symbol">{token.symbol}</div>
-                    </div>
-                    <div className="token-price">{token.usd_price && `${Number(Number(token.usd_price).toFixed(2)).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}`}</div>
-                    <div className={token.usd_price_1hr_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_1hr_percent_change).toFixed(2)}%</div>
-                    <div className={token.usd_price_24hr_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_24hr_percent_change).toFixed(2)}%</div>
-                    <div className={token.usd_price_7d_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_7d_percent_change).toFixed(2)}%</div>
-                    <div className={token.usd_price_30d_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_30d_percent_change).toFixed(2)}%</div>
-                    <div className="">{Number(token.usd_price_24hr_high).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
-                    <div className="">{Number(token.usd_price_24hr_low).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
-                    <div className="">
-                        <div>{Number(token.usd_price_ath).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
-                        <div className={token.ath_percent_change < 0 ? "negative" : "positive"}>{Number(token.ath_percent_change).toFixed(2)}%</div>
-                    </div>
-                    <div className="">{Number(token.total_volume).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
-                    
-                    </li>
-                ))}
-
-            </ul>
-            </TabPane>
-
-            <TabPane tabId="3">
-                <h3>Top ERC20 Tokens by Market Cap</h3>
-                <ul className="token-list market-data wider-col-1">
-                    <li className="header-row">
-                    <div>Token</div>
-                    <div></div>
-                    <div>Price</div>
-                    <div>24h %</div>
-                    <div>7d %</div>
-                    <div>Market Cap</div>
-                    </li>
-                    {loading && <Skeleton />}
-                    {error && <div className="text-red-500">{error}</div>}      
-                    {/* Assuming globalDataCache.tokensData is an array */}
-                    
-                    {globalDataCache.topTokens && globalDataCache.topTokens.map(token => (
-                        <li key={token.token_symbol}>
-                        <TokenLogo tokenImage={token.token_logo} tokenName={token.token_name}/>
-                        <div>
-                            <div className="token-name">{token.token_name}</div>
-                            <div className="token-symbol">{token.token_symbol}</div>
-                        </div>
-                        <div className="token-price">{token.price_usd && `${Number(Number(token.price_usd).toFixed(2)).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}`}</div>
-                        <div className={token.price_24h_percent_change < 0 ? "negative" : "positive"}>{Number(token.price_24h_percent_change).toFixed(2)}%</div>
-                        <div className={token.price_7d_percent_change < 0 ? "negative" : "positive"}>{Number(token.price_7d_percent_change).toFixed(2)}%</div>
-                        <div className="">{Number(token.market_cap_usd).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
-                        
-                        </li>
-                    ))}
-
-                </ul>
-            </TabPane>
-
-            <TabPane tabId="4">
+        <TabPane tabId="1">
                 
                 <div className="row">
                     <div className="col-md-6">
@@ -339,6 +238,138 @@ const MarketData = () => {
                     </div>
                 </div>
             </TabPane>
+
+            <TabPane tabId="2">
+                <h3>Top ERC20 Tokens by Market Cap</h3>
+                <ul className="token-list market-data wider-col-1">
+                    <li className="header-row">
+                    <div>Token</div>
+                    <div></div>
+                    <div>Price</div>
+                    <div>24h %</div>
+                    <div>7d %</div>
+                    <div>Market Cap</div>
+                    </li>
+                    {loading && <Skeleton />}
+                    {error && <div className="text-red-500">{error}</div>}      
+                    {/* Assuming globalDataCache.tokensData is an array */}
+                    
+                    {globalDataCache.topTokens && globalDataCache.topTokens.map(token => (
+                        <li key={token.token_symbol}>
+                        <TokenLogo tokenImage={token.token_logo} tokenName={token.token_name}/>
+                        <div>
+                            <div className="token-name">{token.token_name}</div>
+                            <div className="token-symbol">{token.token_symbol}</div>
+                        </div>
+                        <div className="token-price">{token.price_usd && `${Number(Number(token.price_usd).toFixed(2)).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}`}</div>
+                        <div className={token.price_24h_percent_change < 0 ? "negative" : "positive"}>{Number(token.price_24h_percent_change).toFixed(2)}%</div>
+                        <div className={token.price_7d_percent_change < 0 ? "negative" : "positive"}>{Number(token.price_7d_percent_change).toFixed(2)}%</div>
+                        <div className="">{Number(token.market_cap_usd).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
+                        
+                        </li>
+                    ))}
+
+                </ul>
+            </TabPane>
+
+
+            <TabPane tabId="3">
+            <h3>New 🔥: Top 100 Cryptocurrencies by Market Cap</h3>
+            <ul className="token-list market-data">
+                <li className="header-row">
+                <div>Token</div>
+                <div></div>
+                <div>Price</div>
+                <div>1h %</div>
+                <div>24h %</div>
+                <div>7d %</div>
+                <div>30d %</div>
+                <div>24h High</div>
+                <div>24h Low</div>
+                <div>All Time High</div>
+                <div>Market Cap</div>
+                </li>
+                {loading && <Skeleton />}
+                {error && <div className="text-red-500">{error}</div>}      
+                {/* Assuming globalDataCache.tokensData is an array */}
+                
+                {globalDataCache.marketCap && globalDataCache.marketCap.map(token => (
+                    <li key={token.symbol}>
+                    <TokenLogo tokenImage={token.logo} tokenName={token.name}/>
+                    <div>
+                        <div className="token-name">{token.name}</div>
+                        <div className="token-symbol">{token.symbol}</div>
+                    </div>
+                    <div className="token-price">{token.usd_price && `${Number(Number(token.usd_price).toFixed(2)).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}`}</div>
+                    <div className={token.usd_price_1hr_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_1hr_percent_change).toFixed(2)}%</div>
+                    <div className={token.usd_price_24hr_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_24hr_percent_change).toFixed(2)}%</div>
+                    <div className={token.usd_price_7d_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_7d_percent_change).toFixed(2)}%</div>
+                    <div className={token.usd_price_30d_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_30d_percent_change).toFixed(2)}%</div>
+                    <div className="">{Number(token.usd_price_24hr_high).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
+                    <div className="">{Number(token.usd_price_24hr_low).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
+                    <div className="">
+                        <div>{Number(token.usd_price_ath).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
+                        <div className={token.ath_percent_change < 0 ? "negative" : "positive"}>{Number(token.ath_percent_change).toFixed(2)}%</div>
+                    </div>
+                    <div className="">
+                        <div>{Number(token.market_cap_usd).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
+                        <div className={token.market_cap_24hr_percent_change < 0 ? "negative" : "positive"}>{Number(token.market_cap_24hr_percent_change).toFixed(2)}%</div>
+                    </div>
+                    
+                    </li>
+                ))}
+
+            </ul>
+            </TabPane>
+            <TabPane tabId="4">
+            <h3>New 🔥: Top 100 Cryptocurrencies by Trade Volume</h3>
+            <ul className="token-list market-data">
+                <li className="header-row">
+                <div>Token</div>
+                <div></div>
+                <div>Price</div>
+                <div>1h %</div>
+                <div>24h %</div>
+                <div>7d %</div>
+                <div>30d %</div>
+                <div>24h High</div>
+                <div>24h Low</div>
+                <div>All Time High</div>
+                <div>Trade Volume</div>
+                </li>
+                {loading && <Skeleton />}
+                {error && <div className="text-red-500">{error}</div>}      
+                {/* Assuming globalDataCache.tokensData is an array */}
+                
+                {globalDataCache.tradingVolume && globalDataCache.tradingVolume.map(token => (
+                    <li key={token.symbol}>
+                    <TokenLogo tokenImage={token.logo} tokenName={token.name}/>
+                    <div>
+                        <div className="token-name">{token.name}</div>
+                        <div className="token-symbol">{token.symbol}</div>
+                    </div>
+                    <div className="token-price">{token.usd_price && `${Number(Number(token.usd_price).toFixed(2)).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}`}</div>
+                    <div className={token.usd_price_1hr_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_1hr_percent_change).toFixed(2)}%</div>
+                    <div className={token.usd_price_24hr_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_24hr_percent_change).toFixed(2)}%</div>
+                    <div className={token.usd_price_7d_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_7d_percent_change).toFixed(2)}%</div>
+                    <div className={token.usd_price_30d_percent_change < 0 ? "negative" : "positive"}>{Number(token.usd_price_30d_percent_change).toFixed(2)}%</div>
+                    <div className="">{Number(token.usd_price_24hr_high).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
+                    <div className="">{Number(token.usd_price_24hr_low).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
+                    <div className="">
+                        <div>{Number(token.usd_price_ath).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
+                        <div className={token.ath_percent_change < 0 ? "negative" : "positive"}>{Number(token.ath_percent_change).toFixed(2)}%</div>
+                    </div>
+                    <div className="">{Number(token.total_volume).toLocaleString('en-US', {style: 'currency',currency: 'USD'})}</div>
+                    
+                    </li>
+                ))}
+
+            </ul>
+            </TabPane>
+
+            
+
+            
 
             <TabPane tabId="5">
                 <h3>Top NFT Collections by Market Cap</h3>

@@ -364,6 +364,19 @@ h3.sub-header {
 
 
 #wallet-container {
+    .divider {
+       margin-top:40px;
+       font-weight:600;
+       font-size:1.4rem;
+    }
+    .wallet-card {
+        text-align:left;
+
+        h3 {
+            font-weight: 700;
+            font-size: 1.4rem;
+        }
+    }
     p {
         font-size:1.2rem;
     }
@@ -1711,9 +1724,10 @@ table.table {
   }
 
 #market-data {
+    margin-top:-80px;
     h3 {
-        font-weight: 600;
-        font-size: 1.5rem;
+        font-weight: 700;
+        font-size: 1.4rem;
     }
     .token-list.market-data {
         li > div:nth-child(2) {

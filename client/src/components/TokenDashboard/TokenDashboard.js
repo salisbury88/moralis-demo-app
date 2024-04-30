@@ -162,7 +162,7 @@ const TokenDashboard = ({topOwnersLoading, tokenPricesLoading}) => {
           </>
       <div className="container overview token-dashboard">
         {(globalDataCache.walletAddress || globalDataCache.marketDataLoaded) && (
-            <button className="btn btn-sm btn-outline portfolio-back" onClick={goBack}><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" fill="#edf2f4"><path d="M 10 4.9296875 L 2.9296875 12 L 10 19.070312 L 11.5 17.570312 L 6.9296875 13 L 21 13 L 21 11 L 6.9296875 11 L 11.5 6.4296875 L 10 4.9296875 z" fill="#edf2f4"/></svg> Back to Portfolio</button>
+            <button className="btn btn-sm btn-outline portfolio-back" onClick={goBack}><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" fill="#edf2f4"><path d="M 10 4.9296875 L 2.9296875 12 L 10 19.070312 L 11.5 17.570312 L 6.9296875 13 L 21 13 L 21 11 L 6.9296875 11 L 11.5 6.4296875 L 10 4.9296875 z" fill="#edf2f4"/></svg> Back</button>
         )}
       <div className="token-page page">
         {globalDataCache.token && (

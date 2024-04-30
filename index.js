@@ -8,6 +8,15 @@ import historyApi from './api/history.js';
 import spamApi from './api/spamCheck.js';
 import path from 'path';
 const __dirname = path.resolve();
+import { rateLimit } from 'express-rate-limit'
+
+const limiter = rateLimit({
+	windowMs: 1 * 60 * 1000,
+	limit: 100, 
+	standardHeaders: 'draft-7',
+	legacyHeaders: false
+});
+
 
 const app = express();
 app.use(express.json());
@@ -18,6 +27,7 @@ const server = http.createServer(app);
 
 app.use(express.static(path.resolve(__dirname, './client/build')));
 app.use(validateChain);
+app.use(limiter)
 
 app.use('/', apiIndex);
 app.use('/', tokenApi);

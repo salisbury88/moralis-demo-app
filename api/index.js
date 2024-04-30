@@ -14,7 +14,6 @@ router.get('/api/market-data', async function(req,res,next) {
       `${baseURL}/market-data/global/market-cap`,
       `${baseURL}/market-data/global/volume`,
       `${baseURL}/market-data/erc20s/top-tokens`,
-      `${baseURL}/market-data/erc20s/top-movers`,
       `${baseURL}/market-data/nfts/top-collections`,
       `${baseURL}/market-data/nfts/hottest-collections`
     ];
@@ -33,7 +32,6 @@ router.get('/api/market-data', async function(req,res,next) {
       market_cap,
       trading_volume,
       top_tokens,
-      token_movers,
       nft_market_cap,
       nft_volume
     ] = await Promise.all(fetchPromises);
@@ -42,9 +40,38 @@ router.get('/api/market-data', async function(req,res,next) {
       market_cap,
       trading_volume,
       top_tokens,
-      token_movers,
       nft_market_cap,
       nft_volume
+    });
+
+  } catch(e) {
+    next(e);
+  }
+});
+
+router.get('/api/market-data/movers', async function(req,res,next) {
+  try {
+    const urls = [
+    
+      `${baseURL}/market-data/erc20s/top-movers`,
+    ];
+
+    const fetchPromises = urls.map(url =>
+      fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'X-API-Key': API_KEY
+        }
+      }).then(response => response.json())
+    );
+
+    const [
+      top_movers,
+    ] = await Promise.all(fetchPromises);
+
+    return res.status(200).json({
+      top_movers
     });
 
   } catch(e) {
