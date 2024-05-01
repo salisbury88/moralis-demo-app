@@ -12,7 +12,7 @@
 
 This demo app is comprised of a Nodejs server and a React frontend.
 
-The Nodejs server runs at `http://localhost:3001/` whilst the frontend loads at `http://localhost:3001/`. 
+The Nodejs server runs at `http://localhost:3001/` whilst the frontend loads at `http://localhost:3000/`. 
 
 <b><a href="https://moralis-portfolio-staging-f5f5e6cfeae8.herokuapp.com/" target="_blank">View a Live Demo</a></b>
 
